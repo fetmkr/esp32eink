@@ -117,12 +117,25 @@ class EpdMixed : public GxEPD2_426_GDEQ0426T82
     }
 
     // 흑백 부분 갱신
+    //
+    // 0x22 에 주는 값 (데이터시트 명령표)
+    //   0x80 클럭 켬   0x40 아날로그 켬   0x20 온도 읽기
+    //   0x10 OTP 파형 불러오기   0x08 표시 모드 2(부분)   0x04 표시 시작
+    //   0x02 아날로그 끔   0x01 클럭 끔
+    //
+    // GxEPD2 는 0xFC 를 쓴다. 끄는 비트가 없어서 갱신이 끝나도 전원이 켜진
+    // 채로 남는다. 시계처럼 계속 갱신하면 패널이 한 번도 안 쉰다.
+    //
+    // 제조사 예제는 0xFF 를 쓴다. 끝나면 아날로그와 클럭을 끈다.
+    //   [확인: docs/gooddisplay_demo/.../Display_EPD_W21.cpp 의 EPD_Part_Update]
+    //   [확인: Waveshare FAQ] 갱신할 때마다 잠자기로 두거나 전원을 내려야 한다.
+    //         높은 전압에 오래 놓이면 화면이 상할 수 있다.
     void updatePartBW()
     {
       _writeCommand(0x21);
       _writeData(0x00); _writeData(0x00);
       _writeCommand(0x22);
-      _writeData(0xfc);
+      _writeData(0xff);          // 끝나면 전원을 내린다
       _writeCommand(0x20);
       _waitWhileBusy("흑백 부분갱신", 2000);
     }
