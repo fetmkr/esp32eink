@@ -1,19 +1,61 @@
-// 회색 4단계 화면 + 흑백 시계
+// 회색 4단계 배경 + 흑백 부분 갱신
 //
-// 바탕 그림(로고, 워드마크, 라벨)은 회색 4단계로 한 번 그린다. 글자 가장자리가
-// 매끄럽다. 시계 칸만 순수한 흑백으로 그려두고, 그 칸만 흑백 부분 갱신으로
-// 매초 민다. 전자잉크는 전원을 끊어도 화면을 유지하므로 나머지 회색은 그대로다.
+// 배경(로고, 워드마크, 라벨)은 회색 4단계로 한 번 그린다. 글자 가장자리가
+// 매끄럽다. 시계와 배처럼 움직이는 자리만 흑백 부분 갱신으로 자주 민다.
 //
-// 왜 회색으로는 시계를 못 도나:
-//   회색 4단계는 화면 메모리 두 장을 색을 나타내는 데 다 쓴다.
-//     (0x26,0x24) = (1,1) 흰색  (1,0) 연한회색  (0,1) 진한회색  (0,0) 검정
-//   흑백 부분 갱신은 그 두 장을 "이전 모습" 과 "지금 모습" 으로 쓴다.
-//   즉 회색에서는 "전에 무슨 색이었나" 를 담을 자리가 없다.
-//   그래서 차이만 밀어내는 부분 갱신이 원리적으로 안 된다.
-//   [확인: SSD1677 데이터시트 Table 6-5, GxEPD2_4G 의 writeImage_4G 본문]
+// ============================================================================
+//  이 화면을 만들면서 세 번 데었다. 다음에 비슷한 걸 만들 때 반드시 볼 것.
+// ============================================================================
 //
-// 회색 전체 갱신 4.2초, 흑백 부분 갱신 0.42초. 둘 다 실측값이다.
-
+// [1] 부분 갱신은 창을 정해도 화면 전체를 훑는다
+//
+//     0x44, 0x45 로 정하는 창은 "데이터를 쓰는 자리" 일 뿐이다.
+//     실제로 움직이는 픽셀은 두 화면 메모리(0x26, 0x24) 값이 다른 곳뿐이다.
+//
+//     근거(실측): 창을 480줄에서 60줄로 줄여도 갱신 시간이 407ms 로 같았다.
+//                 창만 훑는다면 시간이 줄어야 한다.
+//
+//     좋은 점: 자리를 여러 개 써놓고 갱신을 한 번만 부르면 여러 곳이 같이
+//              움직인다. 시계만 411ms, 시계 + 항적 442ms. 거의 안 는다.
+//     조심할 점: 안 건드린 자리의 두 메모리가 서로 다르면 거기도 움직인다.
+//
+// [2] 회색과 흑백은 같은 메모리를 다르게 읽는다
+//
+//        (0x26, 0x24)   회색에서       흑백 부분 갱신에서
+//          (1, 1)       흰색           안 움직임
+//          (1, 0)       연한 회색      흰색 -> 검정 으로 움직임
+//          (0, 1)       진한 회색      검정 -> 흰색 으로 움직임
+//          (0, 0)       검정           안 움직임
+//
+//     회색 그림에서 중간 두 단계를 쓴 자리(글자 가장자리)가 흑백 기준으로는
+//     전부 "바뀐 곳" 이다. 그래서 회색으로 그린 뒤 시계 칸만 밀려 했더니
+//     화면 전체가 다시 칠해졌다.
+//
+//     그래서 흑백으로 넘어가기 전에 두 메모리를 같은 값으로 채운다.
+//     (epd_mixed.h 의 fillBothPlanes) 눈에 보이는 회색 그림은 전자잉크라
+//     그대로 남는다.
+//
+// [3] 갱신이 끝나면 두 메모리에 "지금 모습" 을 다시 쓴다. 반드시 두 곳 다.
+//
+//     갱신하는 동안 컨트롤러가 0x24 를 건드린다. 그래서 갱신이 끝나면 두
+//     메모리가 서로 달라져 있다. 그대로 두면 다음에 다른 자리만 밀 때
+//     화면 전체를 훑으면서 이 자리도 "아직 안 바뀐 곳" 으로 보고 또 민다.
+//     이미 옮겨진 알갱이를 계속 문지르니 글자가 겹쳐 보이고 그 칸이 옅어진다.
+//
+//     GxEPD2 의 writeImageAgain 이 하는 일이 이것이다. 세 번 빠뜨렸다.
+//     그래서 아래 stageRegion / commitRegion 으로 묶어 한쪽만 쓸 수 없게 했다.
+//
+// ============================================================================
+//
+// 순서
+//   1. 배경을 회색으로 한 번 그린다 (4.4초). 움직일 자리는 순수 흑백으로.
+//   2. hibernate() -> initBW(). 흑백 설정으로 되돌리고 두 메모리를 같게 채운다.
+//   3. 움직일 때마다 stageRegion -> updatePartBW -> commitRegion (0.44초).
+//   4. 잔상이 쌓이면 1번부터 다시.
+//
+// 값 (실측)
+//   회색 전체 4.4초 / 흑백 부분 0.44초 / 회색 화면 한 장 96000바이트
+//
 #include <Arduino.h>
 #include <SPI.h>
 #include <time.h>
@@ -24,6 +66,7 @@
 #include "../kfont.h"
 #include "../font_pre_m14.h"
 #include "../font_pre_m18.h"
+#include "../font_pre_m24.h"
 #include "../font_pre_m32.h"
 #include "../font_preg_m18.h"
 #include "../font_preg_m24.h"
@@ -31,6 +74,7 @@
 #include "../font_preg_m48.h"
 #include "../font_preg_b46.h"
 #include "../fetm_logo_gray.h"
+#include "../fetm_logo_gray160.h"
 #include "canvas2.h"
 #include "epd_mixed.h"
 
@@ -68,10 +112,11 @@ static uint16_t BG() { return darkMode ? GxEPD_BLACK : GxEPD_WHITE; }
 static uint16_t FG() { return darkMode ? GxEPD_WHITE : GxEPD_BLACK; }
 
 // 시계 칸. x 와 폭은 8의 배수여야 한다.
+// 시계 칸은 맨 아래 가운데. x 와 폭은 8의 배수여야 한다.
 static const int16_t CLOCK_X = 272;
 static const int16_t CLOCK_W = 256;
-static const int16_t CLOCK_Y = 48;
-static const int16_t CLOCK_H = 48;
+static const int16_t CLOCK_Y = 372;
+static const int16_t CLOCK_H = 44;
 
 static const int16_t M = 48;
 
@@ -79,40 +124,56 @@ static const int16_t M = 48;
 // x 와 폭은 8의 배수여야 한다.
 static const int16_t TRK_X = 48;
 static const int16_t TRK_W = 704;
-static const int16_t TRK_Y = 404;
-static const int16_t TRK_H = 40;
+static const int16_t TRK_Y = 36;
+static const int16_t TRK_H = 96;
 static const int16_t TRK_STEP = 8;          // 한 걸음에 8픽셀
+static const uint32_t TRK_MS = 450;         // 한 걸음 간격. 갱신이 420ms 라 그보다 조금 길게
 
 GFXcanvas1* trk = nullptr;
 GFXcanvas1* trkPrev = nullptr;
 static int16_t boatX = 0;                   // 띠 안에서의 위치
 
-// 길은 완만한 물결 모양이다. 어느 x 에서 y 가 얼마인지.
+// 잔상 털기. 부분 갱신을 계속하면 옛 그림이 겹쳐 보인다.
+// 이만큼 밀었으면 배경부터 통째로 다시 그린다 (4.7초).
+// 시리얼로 G<숫자> 를 보내면 바꿀 수 있다.
+static int  ghostEvery = 300;
+static int  partCount = 0;
+static bool boatOn = true;      // 시리얼 v 로 멈췄다 켰다
+
+// 배가 가는 길. 완만한 물결 모양이다. 미리 보여주지 않고 지나간 자리만 남긴다.
 static int16_t routeY(int16_t x)
 {
-  float t = (float)x / (float)TRK_W * 6.2831853f * 2.0f;
-  return (int16_t)(TRK_H / 2 + sinf(t) * (TRK_H / 2 - 8));
+  float t = (float)x / (float)TRK_W * 6.2831853f * 1.5f;
+  return (int16_t)(60 + sinf(t) * 24);
 }
 
-// 항적 띠를 1비트로 그린다. 비트 1 = 글자/선.
+// 돛단배. 수면 위치 y 에 놓는다. 대략 가로 42, 세로 42.
+static void drawBoat(GFXcanvas1& g, int16_t x, int16_t y)
+{
+  for (int16_t d = 0; d < 9; d++)                 // 선체
+    g.drawFastHLine(x - 20 + d * 2, y + d, 40 - d * 4, 1);
+
+  const int16_t mx = x + 11;                      // 돛대는 앞쪽(가는 방향)으로
+  g.fillRect(mx - 1, y - 34, 3, 34, 1);
+
+  for (int16_t d = 0; d < 30; d++)                // 돛은 뒤로 퍼진다
+  {
+    int16_t wdt = 3 + d * 25 / 30;
+    g.drawFastHLine(mx - 1 - wdt, y - 32 + d, wdt, 1);
+  }
+}
+
+// 항적 띠를 1비트로 그린다. 비트 1 = 선.
 static void drawTrackCanvas()
 {
   trk->fillScreen(0);
-  // 고정된 길. 점선으로.
-  for (int16_t x = 0; x < TRK_W; x += 4)
-    trk->drawPixel(x, routeY(x), 1);
-  // 지나온 자취. 실선으로.
+  // 지나온 자취만 그린다. 앞길은 안 보여준다.
   for (int16_t x = 0; x < boatX; x++)
   {
     int16_t y = routeY(x);
-    trk->drawPixel(x, y, 1);
-    trk->drawPixel(x, y + 1, 1);
+    trk->drawFastVLine(x, y, 3, 1);          // 자취는 3픽셀 굵기
   }
-  // 배. 작은 삼각형.
-  int16_t bx = boatX, by = routeY(boatX);
-  for (int16_t d = 0; d < 7; d++)
-    trk->drawFastVLine(bx - 6 + d, by - d / 2 - 1, d + 2, 1);
-  trk->drawFastHLine(bx - 7, by + 3, 9, 1);
+  drawBoat(*trk, boatX, routeY(boatX));
 }
 
 static void nowText(char* out, size_t n)
@@ -144,7 +205,7 @@ static void drawClockCanvas()
   clk->fillScreen(0);
   int16_t cell = kfDigitCell(pre_m32);
   int16_t w = kfWidthMono(pre_m32, buf);
-  kfDrawMono(*clk, (CLOCK_W - w) / 2, pre_m32.ascent + 4, buf, pre_m32, 1);
+  kfDrawMono(*clk, (CLOCK_W - w) / 2, pre_m32.ascent + 5, buf, pre_m32, 1);  // 밑선 = 372+31+5 = 408
   (void)cell;
 }
 
@@ -185,34 +246,48 @@ static void blit1bit(Canvas2& c, GFXcanvas1& g, int16_t x0, int16_t y0,
     }
 }
 
+// 자리 잡기
+//   테두리   24..776 x 24..456  (752 x 432)
+//   로고 칸  160..320  세로 가운데. 위 136, 아래 136 으로 같다.
+//   가로줄   146 과 334. 로고 칸에서 위아래로 똑같이 14 떨어져 있다.
+//   항적 띠  36..132   위 칸 안에서 가운데
+//   시계 칸  372..416  아래 칸 안에서 가운데
 static void composeIdentity(Canvas2& c)
 {
   c.fillScreen(BG());
-  kfDrawGray(c, M, 76, "전자 기술을 섞다", preg_m18, GLp(), 1);
-  kfDrawGrayRight(c, SCR_W - M, 76, "서울 · 대한민국", preg_m18, GLp(), 1);
-  c.drawFastHLine(M, 108, SCR_W - 2 * M, FG());
 
-  drawGrayBitmap(c, 48, 158, fetm_logo_gray, FETM_LOGO_GRAY_WIDTH, FETM_LOGO_GRAY_HEIGHT);
-  c.drawFastVLine(288, 158, FETM_LOGO_GRAY_HEIGHT, FG());
+  // 테두리
+  c.drawRect(24, 24, 752, 432, FG());
 
-  static const char* words[4] = { "FUTURE", "ELECTRONICS", "TECHNOLOGY", "MIXER" };
-  for (int i = 0; i < 4; i++)
-    kfDrawGray(c, 328, 191 + i * 56, words[i], preg_b46, GLp(), 0);
-
-  c.drawFastHLine(M, 392, SCR_W - 2 * M, FG());
-
-  blitClockBox(c);
-
-  // 항적 띠. 여기도 순수 흑백이어야 한다.
+  // 위 칸: 항적 띠. 순수 흑백이어야 한다.
   drawTrackCanvas();
   blit1bit(c, *trk, TRK_X, TRK_Y, TRK_W, TRK_H);
   memcpy(trkPrev->getBuffer(), trk->getBuffer(),
          (size_t)((TRK_W + 7) / 8) * TRK_H);
+
+  c.drawFastHLine(M, 146, SCR_W - 2 * M, FG());
+
+  // 가운데 칸: 마크와 워드마크. 둘 다 160 에서 320 사이에 든다.
+  drawGrayBitmap(c, 48, 160, fetm_logo_gray160,
+                 FETM_LOGO_GRAY160_WIDTH, FETM_LOGO_GRAY160_HEIGHT);
+  c.drawFastVLine(248, 160, FETM_LOGO_GRAY160_HEIGHT, FG());
+
+  static const char* words[4] = { "FUTURE", "ELECTRONICS", "TECHNOLOGY", "MIXER" };
+  for (int i = 0; i < 4; i++)
+    kfDrawGray(c, 288, 193 + i * 42, words[i], preg_b46, GLp(), 0);
+
+  c.drawFastHLine(M, 334, SCR_W - 2 * M, FG());
+
+  // 아래 칸: 글씨와 시계. 시계 글자 밑선과 양옆 글씨 밑선을 맞춘다.
+  kfDrawGray(c, M, 408, "전자 기술을 섞다", preg_m18, GLp(), 1);
+  kfDrawGrayRight(c, SCR_W - M, 408, "FETM.KR", preg_m18, GLp(), 1);
+  blitClockBox(c);
 }
 
 static void composeHangul(Canvas2& c)
 {
   c.fillScreen(BG());
+  c.drawRect(24, 24, 752, 432, FG());
   kfDrawGray(c, M, 62, "한글 렌더링 시험 / Pretendard", preg_m24, GLp(), 0);
   c.drawFastHLine(M, 82, SCR_W - 2 * M, FG());
 
@@ -285,9 +360,37 @@ static void pushGray()
 // 부분 갱신은 창을 정해도 화면 전체를 훑는다. 그러니 창을 두 번 잡아 각각
 // 값을 써넣고, 갱신은 한 번만 부르면 두 자리가 같이 움직인다.
 // 두 번 부르면 0.41초가 두 번 든다. 한 번이면 0.41초로 끝난다.
-static void pushRegionsBW(bool moveBoat)
+static void blit1bit(Canvas2& c, GFXcanvas1& g, int16_t x0, int16_t y0,
+                     int16_t w, int16_t h);
+
+// 한 자리를 밀 준비. 이전 모습과 지금 모습을 각각 넣는다.
+// 두 곳을 늘 짝으로 다루려고 함수로 묶었다. 따로 쓰면 한쪽을 빠뜨리게 된다.
+static void stageRegion(int16_t x, int16_t y, int16_t w, int16_t h,
+                        const uint8_t* prev, const uint8_t* cur, bool inv)
 {
-  drawClockCanvas();
+  display.epd2.setRamArea(x, y, w, h);
+  display.epd2.writeWindow(0x26, prev, w, h, inv);   // 이전 모습
+  display.epd2.setRamArea(x, y, w, h);
+  display.epd2.writeWindow(0x24, cur,  w, h, inv);   // 지금 모습
+}
+
+// 밀고 난 뒤 정리. 두 곳 다 지금 모습으로 맞춘다.
+//
+// 반드시 두 곳 다여야 한다. 갱신하는 동안 컨트롤러가 버퍼를 건드리기 때문이다.
+// GxEPD2 의 writeImageAgain 도 두 곳 다 쓴다. 한쪽만 쓰면 다음 갱신에서 같은
+// 변화가 또 걸려 글자가 겹쳐 보인다. 이걸 두 번 틀렸다.
+static void commitRegion(int16_t x, int16_t y, int16_t w, int16_t h,
+                         const uint8_t* cur, bool inv)
+{
+  display.epd2.setRamArea(x, y, w, h);
+  display.epd2.writeWindow(0x24, cur, w, h, inv);
+  display.epd2.setRamArea(x, y, w, h);
+  display.epd2.writeWindow(0x26, cur, w, h, inv);
+}
+
+static void pushRegionsBW(bool moveClock, bool moveBoat)
+{
+  if (moveClock) drawClockCanvas();
   if (moveBoat)
   {
     boatX += TRK_STEP;
@@ -295,35 +398,39 @@ static void pushRegionsBW(bool moveBoat)
     drawTrackCanvas();
   }
 
-  bool inv = !darkMode;
+  const bool inv = !darkMode;
+  const size_t clkBytes = (size_t)((CLOCK_W + 7) / 8) * CLOCK_H;
+  const size_t trkBytes = (size_t)((TRK_W + 7) / 8) * TRK_H;
+
   uint32_t t0 = millis();
-
-  display.epd2.setRamArea(CLOCK_X, CLOCK_Y, CLOCK_W, CLOCK_H);
-  display.epd2.writeWindow(0x26, clkPrev->getBuffer(), CLOCK_W, CLOCK_H, inv);
-  display.epd2.setRamArea(CLOCK_X, CLOCK_Y, CLOCK_W, CLOCK_H);
-  display.epd2.writeWindow(0x24, clk->getBuffer(), CLOCK_W, CLOCK_H, inv);
-
+  if (moveClock)
+    stageRegion(CLOCK_X, CLOCK_Y, CLOCK_W, CLOCK_H,
+                clkPrev->getBuffer(), clk->getBuffer(), inv);
   if (moveBoat)
-  {
-    display.epd2.setRamArea(TRK_X, TRK_Y, TRK_W, TRK_H);
-    display.epd2.writeWindow(0x26, trkPrev->getBuffer(), TRK_W, TRK_H, inv);
-    display.epd2.setRamArea(TRK_X, TRK_Y, TRK_W, TRK_H);
-    display.epd2.writeWindow(0x24, trk->getBuffer(), TRK_W, TRK_H, inv);
-  }
+    stageRegion(TRK_X, TRK_Y, TRK_W, TRK_H,
+                trkPrev->getBuffer(), trk->getBuffer(), inv);
 
-  display.epd2.updatePartBW();          // 한 번만. 두 자리가 같이 움직인다.
+  display.epd2.updatePartBW();          // 자리가 몇 개든 갱신은 한 번만
   uint32_t t1 = millis();
 
-  memcpy(clkPrev->getBuffer(), clk->getBuffer(),
-         (size_t)((CLOCK_W + 7) / 8) * CLOCK_H);
+  if (moveClock)
+  {
+    commitRegion(CLOCK_X, CLOCK_Y, CLOCK_W, CLOCK_H, clk->getBuffer(), inv);
+    memcpy(clkPrev->getBuffer(), clk->getBuffer(), clkBytes);
+  }
   if (moveBoat)
-    memcpy(trkPrev->getBuffer(), trk->getBuffer(),
-           (size_t)((TRK_W + 7) / 8) * TRK_H);
+  {
+    commitRegion(TRK_X, TRK_Y, TRK_W, TRK_H, trk->getBuffer(), inv);
+    memcpy(trkPrev->getBuffer(), trk->getBuffer(), trkBytes);
+    // 회색 그림판에도 반영. 화면을 다시 그리거나 시리얼로 받아볼 때 맞게 나온다.
+    blit1bit(*cv, *trk, TRK_X, TRK_Y, TRK_W, TRK_H);
+  }
 
+  partCount++;
   static int n = 0;
   if (++n % 10 == 1)
-    Serial.printf("부분 갱신 %lu ms (시계%s)\n", (unsigned long)(t1 - t0),
-                  moveBoat ? " + 항적" : "");
+    Serial.printf("부분 갱신 %lu ms (%s%s) 배x=%d\n", (unsigned long)(t1 - t0),
+                  moveClock ? "시계" : "", moveBoat ? " 항적" : "", boatX);
 }
 
 static void showScreen()
@@ -335,6 +442,7 @@ static void showScreen()
   pushGray();
   display.epd2.powerOffPub();
   display.epd2.initBW(0x01);              // 부분 갱신용 준비. 두 메모리를 같게.
+  partCount = 0;
   Serial.printf("화면 %d (%s) 그리기 %lu ms\n", screen,
                 darkMode ? "검은 바탕" : "흰 바탕",
                 (unsigned long)(millis() - t0));
@@ -429,18 +537,30 @@ void loop()
     showScreen();
   }
 
-  // FETM 화면일 때만 시계가 돈다
+  // FETM 화면일 때만 시계와 배가 움직인다.
+  // 배는 시계와 따로 걸음을 옮긴다. 갱신이 0.42초라 0.45초에 한 걸음까지 된다.
+  // 둘이 겹치는 순간에는 한 번만 갱신해서 0.42초로 끝낸다.
   static int lastSec = -1;
+  static uint32_t lastBoat = 0;
   if (screen == 0)
   {
     time_t t = time(nullptr);
     struct tm tmv;
     localtime_r(&t, &tmv);
-    if (tmv.tm_sec != lastSec)
+    bool clockDue = (tmv.tm_sec != lastSec);
+    bool boatDue  = boatOn && (millis() - lastBoat >= TRK_MS);
+    if (clockDue || boatDue)
     {
-      lastSec = tmv.tm_sec;
-      LED_ON(); delay(60); LED_OFF();
-      pushRegionsBW(true);
+      if (clockDue) lastSec = tmv.tm_sec;
+      if (boatDue)  lastBoat = millis();
+      LED_ON(); delay(40); LED_OFF();
+      pushRegionsBW(clockDue, boatDue);
+      if (partCount >= ghostEvery)
+      {
+        partCount = 0;
+        Serial.println("잔상 털기: 배경부터 다시 그린다");
+        showScreen();
+      }
     }
   }
 
@@ -458,6 +578,21 @@ void loop()
       Serial.println("시계 맞춤");
     }
     else if (ch == 'r') showScreen();
+    else if (ch == 'v')
+    {
+      boatOn = !boatOn;
+      Serial.printf("배 -> %s\n", boatOn ? "감" : "멈춤");
+    }
+    else if (ch == 'G')
+    {
+      char b[12];
+      size_t n = Serial.readBytesUntil('\n', b, sizeof(b) - 1);
+      b[n] = 0;
+      int v = atoi(b);
+      if (v >= 10) ghostEvery = v;
+      partCount = 0;
+      Serial.printf("잔상 털기 -> 부분 갱신 %d번마다\n", ghostEvery);
+    }
     else if (ch == '0') { screen = 0; showScreen(); }
     else if (ch == '1') { screen = 1; showScreen(); }
     else if (ch == 'i') { darkMode = !darkMode; showScreen(); }
