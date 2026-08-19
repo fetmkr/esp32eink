@@ -25,6 +25,11 @@ STRINGS = [
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
     " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
     "px 크기",
+    "회색 4단계 / 4 Gray Levels",
+    "흑백 두 값",
+    "안티알리아싱",
+    "흰색", "연한 회색", "진한 회색", "검정",
+    "갱신 4초",
 ]
 
 # (헤더이름, 폰트파일, 픽셀크기)
@@ -37,7 +42,17 @@ FONTS = [
     ("pre_b46", "Pretendard-Bold.otf", 46),
 ]
 
-THRESHOLD = 128   # 이보다 진하면 잉크로 친다
+THRESHOLD = 128   # 흑백으로 자를 때 이보다 진하면 잉크로 친다
+
+# 회색 4단계로 구울 크기들. 안티알리아싱된 글자를 4단계로 눌러 담는다.
+# 한 픽셀에 2비트. 0 = 안 그림, 1 = 연한 회색, 2 = 진한 회색, 3 = 검정.
+GRAY_FONTS = [
+    ("preg_m18", "Pretendard-Medium.otf", 18),
+    ("preg_m24", "Pretendard-Medium.otf", 24),
+    ("preg_m32", "Pretendard-Medium.otf", 32),
+    ("preg_m48", "Pretendard-Medium.otf", 48),
+    ("preg_b46", "Pretendard-Bold.otf", 46),
+]
 
 
 def build(name, ttf_name, size, chars):
@@ -96,13 +111,72 @@ def build(name, ttf_name, size, chars):
     return len(bits)
 
 
+def build_gray(name, ttf_name, size, chars):
+    """안티알리아싱 그대로 살려 4단계로 담는다. 한 픽셀 2비트."""
+    path = os.path.join(FONT_DIR, ttf_name)
+    font = ImageFont.truetype(path, size)
+    ascent, descent = font.getmetrics()
+
+    bits = bytearray()
+    glyphs = []
+    for ch in chars:
+        adv = int(round(font.getlength(ch)))
+        x0, y0, x1, y1 = font.getbbox(ch, anchor="ls")
+        w, h = x1 - x0, y1 - y0
+        if w <= 0 or h <= 0:
+            glyphs.append((ord(ch), len(bits), 0, 0, 0, 0, adv))
+            continue
+        img = Image.new("L", (w, h), 0)
+        ImageDraw.Draw(img).text((-x0, -y0), ch, font=font, fill=255, anchor="ls")
+        px = img.load()
+        off = len(bits)
+        stride = (w + 3) // 4            # 한 바이트에 픽셀 4개
+        for yy in range(h):
+            row = bytearray(stride)
+            for xx in range(w):
+                lv = (px[xx, yy] * 3 + 127) // 255      # 0..3
+                if lv:
+                    row[xx >> 2] |= lv << (6 - 2 * (xx & 3))
+            bits += row
+        glyphs.append((ord(ch), off, w, h, x0, y0, adv))
+
+    glyphs.sort(key=lambda g: g[0])
+    out = os.path.join(OUT_DIR, "font_%s.h" % name)
+    with open(out, "w", encoding="utf-8") as f:
+        f.write("// %s %dpx 회색 4단계. tools/build_fonts.py 로 자동 생성.\n"
+                % (ttf_name, size))
+        f.write("// 한 픽셀 2비트. 0 = 안 그림, 1 = 연한 회색, 2 = 진한 회색, 3 = 검정\n")
+        f.write("// 한 줄은 ceil(w/4) 바이트, 위 비트부터.\n")
+        f.write("#pragma once\n#include \"kfont.h\"\n\n")
+        f.write("static const uint8_t %s_bits[] = {\n" % name)
+        for i in range(0, len(bits), 16):
+            f.write("  " + "".join("0x%02X," % b for b in bits[i:i + 16]) + "\n")
+        f.write("};\n\n")
+        f.write("static const KGlyph %s_glyphs[] = {\n" % name)
+        for cp, off, w, h, dx, dy, adv in glyphs:
+            f.write("  {0x%04X,%6d,%3d,%3d,%4d,%4d,%3d},\n"
+                    % (cp, off, w, h, dx, dy, adv))
+        f.write("};\n\n")
+        f.write("static const KFontG %s = { %s_bits, %s_glyphs, %d, %d, %d };\n"
+                % (name, name, name, len(glyphs), ascent, ascent + descent))
+    print("%-10s %-26s %2dpx  글자 %3d  비트맵 %6d바이트  -> %s"
+          % (name, ttf_name, size, len(glyphs), len(bits), os.path.basename(out)))
+    return len(bits)
+
+
 def main():
     chars = sorted(set("".join(STRINGS)))
     print("담을 글자 %d개: %s\n" % (len(chars), "".join(chars)))
     total = 0
     for name, ttf, size in FONTS:
         total += build(name, ttf, size, chars)
-    print("\n비트맵 합계 %.1f KB" % (total / 1024.0))
+    print("\n흑백 비트맵 합계 %.1f KB" % (total / 1024.0))
+
+    print("\n회색 4단계:")
+    gtotal = 0
+    for name, ttf, size in GRAY_FONTS:
+        gtotal += build_gray(name, ttf, size, chars)
+    print("\n회색 비트맵 합계 %.1f KB" % (gtotal / 1024.0))
 
 
 if __name__ == "__main__":

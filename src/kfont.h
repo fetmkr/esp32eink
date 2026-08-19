@@ -43,6 +43,29 @@ void kfDrawRight(Adafruit_GFX& g, int16_t right, int16_t y, const char* s,
 void kfDrawCenter(Adafruit_GFX& g, int16_t cx, int16_t y, const char* s,
                   const KFont& f, uint16_t color, int16_t track = 0);
 
+// ---------------------------------------------------------------- 회색 4단계
+//
+// 흑백 폰트는 글자 가장자리가 계단처럼 진다. 이 패널은 회색 4단계를 낼 수 있으니
+// 가장자리를 회색으로 채우면 매끄러워진다 (안티알리아싱).
+//
+// 담는 법: 한 픽셀에 2비트. 한 줄은 ceil(w/4) 바이트, 위 비트부터.
+//   0 = 안 그림, 1 = 연한 회색, 2 = 진한 회색, 3 = 검정
+// 글자 정보(KGlyph)는 흑백과 같은 것을 쓴다.
+struct KFontG
+{
+  const uint8_t* bits;
+  const KGlyph*  glyphs;
+  uint16_t       count;
+  uint8_t        ascent, lineHeight;
+};
+
+// levelColor 는 1,2,3 단계에 쓸 색 세 개. 0번 자리는 안 쓴다.
+void kfDrawGray(Adafruit_GFX& g, int16_t x, int16_t y, const char* s,
+                const KFontG& f, const uint16_t levelColor[4], int16_t track = 0);
+int16_t kfWidthG(const KFontG& f, const char* s, int16_t track = 0);
+void kfDrawGrayRight(Adafruit_GFX& g, int16_t right, int16_t y, const char* s,
+                     const KFontG& f, const uint16_t levelColor[4], int16_t track = 0);
+
 // 시계처럼 숫자가 계속 바뀌는 곳에 쓴다.
 // Pretendard 는 숫자 폭이 글자마다 달라서, 그냥 그리면 1 이 나올 때마다
 // 뒤 글자가 앞뒤로 흔들린다. 숫자를 같은 폭의 칸 안에 가운데 놓아 고정한다.

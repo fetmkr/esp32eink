@@ -23,6 +23,7 @@ if pre:
     ser.reset_input_buffer()
 
 w = h = n = None
+bpp = 1
 b64 = []
 done = False
 t0 = time.time()
@@ -34,11 +35,12 @@ while time.time() - t0 < timeout_s and not done:
     line = ser.readline().decode("utf-8", "replace").strip()
     if not line:
         continue
-    if line.startswith("---FB-BEGIN"):
+    if line.startswith("---FB-BEGIN") or line.startswith("---FB2-BEGIN"):
+        bpp = 2 if line.startswith("---FB2") else 1
         p = line.replace("-", " ").split()
         w, h, n = int(p[2]), int(p[3]), int(p[4])
         b64 = []
-    elif line.startswith("---FB-END"):
+    elif line.startswith("---FB-END") or line.startswith("---FB2-END"):
         if w is not None:
             done = True
     elif w is not None:
@@ -55,15 +57,34 @@ if len(data) != n:
     print("!! 크기 불일치")
     sys.exit(1)
 
-stride = (w + 7) // 8
-im = Image.new("L", (w, h), 255)
-px = im.load()
-ink = 0
-for y in range(h):
-    row = data[y * stride:(y + 1) * stride]
-    for x in range(w):
-        if row[x // 8] & (1 << (7 - x % 8)):
-            px[x, y] = 0            # 비트 1 = 검정 잉크
-            ink += 1
-im.save(out)
-print("저장: %s   잉크 %.1f%%" % (out, 100.0 * ink / (w * h)))
+if bpp == 1:
+    stride = (w + 7) // 8
+    im = Image.new("L", (w, h), 255)
+    px = im.load()
+    ink = 0
+    for y in range(h):
+        row = data[y * stride:(y + 1) * stride]
+        for x in range(w):
+            if row[x // 8] & (1 << (7 - x % 8)):
+                px[x, y] = 0            # 비트 1 = 검정 잉크
+                ink += 1
+    im.save(out)
+    print("저장: %s   잉크 %.1f%%" % (out, 100.0 * ink / (w * h)))
+else:
+    # 회색 4단계. 한 바이트에 픽셀 4개, 위 비트부터. 3 = 흰색, 0 = 검정.
+    LEVEL = [0, 96, 176, 255]
+    stride = (w + 3) // 4
+    im = Image.new("L", (w, h), 255)
+    px = im.load()
+    hist = [0, 0, 0, 0]
+    for y in range(h):
+        row = data[y * stride:(y + 1) * stride]
+        for x in range(w):
+            lv = (row[x >> 2] >> (6 - 2 * (x & 3))) & 0x03
+            px[x, y] = LEVEL[lv]
+            hist[lv] += 1
+    im.save(out)
+    tot = float(w * h)
+    print("저장: %s   검정 %.1f%% 진회 %.1f%% 연회 %.1f%% 흰색 %.1f%%"
+          % (out, 100 * hist[0] / tot, 100 * hist[1] / tot,
+             100 * hist[2] / tot, 100 * hist[3] / tot))

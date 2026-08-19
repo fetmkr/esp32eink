@@ -383,6 +383,9 @@ static void dumpFrame(GFXcanvas1& c)
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   const uint8_t* buf = c.getBuffer();
   size_t n = (size_t)((c.width() + 7) / 8) * c.height();
+  // 평소에는 안 나가면 버리게 해뒀다 (시계가 멈추지 않게). 그런데 덤프는
+  // 통째로 다 나가야 하므로 이때만 기다리게 한다.
+  Serial.setTxTimeoutMs(100);
   Serial.printf("---FB-BEGIN %d %d %u---\n", c.width(), c.height(), (unsigned)n);
   char line[100];
   int li = 0;
@@ -399,6 +402,8 @@ static void dumpFrame(GFXcanvas1& c)
   }
   if (li) { line[li] = 0; Serial.println(line); }
   Serial.println("---FB-END---");
+  Serial.flush();
+  Serial.setTxTimeoutMs(0);
 }
 
 // ------------------------------------------------------------------ setup / loop

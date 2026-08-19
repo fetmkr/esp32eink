@@ -147,3 +147,65 @@ void kfDrawMonoCenter(Adafruit_GFX& gfx, int16_t cx, int16_t y, const char* s,
 {
   kfDrawMono(gfx, cx - kfWidthMono(f, s) / 2, y, s, f, color);
 }
+
+// ---------------------------------------------------------------- 회색 4단계
+
+static const KGlyph* kfFindG(const KFontG& f, uint32_t cp)
+{
+  if (cp > 0xFFFF) return nullptr;
+  int lo = 0, hi = (int)f.count - 1;
+  while (lo <= hi)
+  {
+    int mid = (lo + hi) / 2;
+    uint16_t v = f.glyphs[mid].cp;
+    if (v == cp) return &f.glyphs[mid];
+    if (v < cp) lo = mid + 1; else hi = mid - 1;
+  }
+  return nullptr;
+}
+
+int16_t kfWidthG(const KFontG& f, const char* s, int16_t track)
+{
+  int16_t w = 0;
+  uint32_t cp;
+  bool first = true;
+  while (*s)
+  {
+    s = kfNext(s, &cp);
+    const KGlyph* g = kfFindG(f, cp);
+    if (!first) w += track;
+    first = false;
+    w += g ? g->adv : (f.ascent / 2);
+  }
+  return w;
+}
+
+void kfDrawGray(Adafruit_GFX& gfx, int16_t x, int16_t y, const char* s,
+                const KFontG& f, const uint16_t levelColor[4], int16_t track)
+{
+  uint32_t cp;
+  while (*s)
+  {
+    s = kfNext(s, &cp);
+    const KGlyph* g = kfFindG(f, cp);
+    if (!g) { x += f.ascent / 2 + track; continue; }
+    const uint8_t* bm = f.bits + g->off;
+    uint8_t stride = (g->w + 3) / 4;         // 한 바이트에 픽셀 4개
+    for (uint8_t row = 0; row < g->h; row++)
+    {
+      const uint8_t* line = bm + (uint32_t)row * stride;
+      for (uint8_t col = 0; col < g->w; col++)
+      {
+        uint8_t lv = (line[col >> 2] >> (6 - 2 * (col & 3))) & 0x03;
+        if (lv) gfx.drawPixel(x + g->dx + col, y + g->dy + row, levelColor[lv]);
+      }
+    }
+    x += g->adv + track;
+  }
+}
+
+void kfDrawGrayRight(Adafruit_GFX& gfx, int16_t right, int16_t y, const char* s,
+                     const KFontG& f, const uint16_t levelColor[4], int16_t track)
+{
+  kfDrawGray(gfx, right - kfWidthG(f, s, track), y, s, f, levelColor, track);
+}
