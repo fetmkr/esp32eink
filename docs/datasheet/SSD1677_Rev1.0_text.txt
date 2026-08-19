@@ -1,0 +1,2361 @@
+SOLOMON SYSTECH
+SEMICONDUCTOR TECHNICAL DATA
+
+
+
+
+                                                   SSD1677
+
+
+
+
+                                             Advance Information
+                        960 Source x 680 Gate Red/Black/White
+                    Active Matrix EPD Display Driver with Controller
+
+
+
+
+This document contains information on a new product. Specifications and information herein are subject to change without
+notice.
+
+http://www.solomon-systech.com
+SSD1677         Rev 1.0      P 1/47         Nov 2018                        Copyright  2018 Solomon Systech Limited
+CONTENTS
+1      GENERAL DESCRIPTION .................................................................................................5
+2      FEATURES .........................................................................................................................5
+3      ORDERING INFORMATION...............................................................................................6
+4      BLOCK DIAGRAM .............................................................................................................7
+5      PIN DESCRIPTION .............................................................................................................8
+6      FUNCTIONAL BLOCK DESCRIPTION ............................................................................12
+    6.1     MCU INTERFACE ................................................................................................................................ 12
+       6.1.1 MCU Interface selection ................................................................................................................ 12
+       6.1.2 MCU Serial Interface (4-wire SPI) ................................................................................................. 12
+       6.1.3 MCU Serial Peripheral Interface (3-wire SPI)................................................................................. 13
+    6.2     OSCILLATOR ....................................................................................................................................... 14
+    6.3     BOOSTER & REGULATOR ..................................................................................................................... 14
+    6.4     VCOM SENSING ................................................................................................................................. 14
+    6.5     RAM ................................................................................................................................................. 15
+    6.6     PROGRAMMABLE W AVEFORM FOR GATE, SOURCE AND VCOM................................................................ 15
+    6.7     W AVEFORM LOOKUP TABLE (LUT) ........................................................................................................ 17
+    6.8     TEMPERATURE SENSING ...................................................................................................................... 18
+       6.8.1 Internal Temperature Sensor ........................................................................................................ 18
+       6.8.2 External Temperature Sensor I2C Single Master Interface ............................................................ 18
+       6.8.3 Format of temperature value ......................................................................................................... 18
+    6.9     W AVEFORM LUT SEARCHING MECHANISM ............................................................................................. 19
+    6.10    ONE TIME PROGRAMMABLE (OTP) MEMORY.......................................................................................... 20
+       6.10.1    The Format for Temperature Range (TR) .................................................................................. 21
+    6.11    VCI DETECTION .................................................................................................................................. 21
+    6.12    HV READY DETECTION ........................................................................................................................ 21
+7      COMMAND TABLE ..........................................................................................................22
+8      COMMAND DESCRIPTION..............................................................................................36
+    8.1        DRIVER OUTPUT CONTROL (01H).......................................................................................................... 36
+    8.2        DATA ENTRY MODE SETTING (11H)....................................................................................................... 38
+    8.3        SET RAM X - ADDRESS START / END POSITION (44H) ............................................................................ 39
+    8.4        SET RAM Y - ADDRESS START / END POSITION (45H) ............................................................................ 39
+    8.5        SET RAM ADDRESS COUNTER (4EH-4FH) ............................................................................................ 40
+9      OPERATION FLOW AND CODE SEQUENCE ................................................................41
+    9.1        GENERAL OPERATION FLOW TO DRIVE DISPLAY PANEL ............................................................................. 41
+10         ABSOLUTE MAXIMUM RATING ..................................................................................42
+11         ELECTRICAL CHARACTERISTICS .............................................................................42
+12         AC CHARACTERISTICS ..............................................................................................44
+    12.1       SERIAL PERIPHERAL INTERFACE ........................................................................................................... 44
+13         APPLICATION CIRCUIT ...............................................................................................45
+14         PACKAGE INFORMATION ..........................................................................................46
+
+
+
+
+SSD1677                 Rev 1.0          P 3/47            Nov 2018                                                                   Solomon Systech
+TABLES
+TABLE 3-1 : ORDERING INFORMATION ...................................................................................................................... 6
+TABLE 5-1: POWER SUPPLY PINS ............................................................................................................................ 8
+TABLE 5-2: INTERFACE LOGIC PINS.......................................................................................................................... 9
+TABLE 5-3: ANALOG PINS ..................................................................................................................................... 10
+TABLE 5-4: EXTERNAL POWER SUPPLY PINS .......................................................................................................... 10
+TABLE 5-5: DRIVER OUTPUT PINS.......................................................................................................................... 11
+TABLE 5-6: MISCELLANEOUS PINS ......................................................................................................................... 11
+TABLE 6-1: INTERFACE PIN ASSIGNMENT FOR DIFFERENT MCU INTERFACES .............................................................. 12
+TABLE 6-2 : CONTROL PINS STATUS OF 4-WIRE SPI ................................................................................................. 12
+TABLE 6-3 : CONTROL PINS STATUS OF 3-WIRE SPI ................................................................................................. 13
+TABLE 6-4 : RAM BIT AND LUT MAPPING FOR 3-COLOR DISPLAY ............................................................................... 15
+TABLE 6-5 : RAM BIT AND LUT MAPPING FOR BLACK/WHITE DISPLAY ......................................................................... 15
+TABLE 6-6 : VS[NX-LUT M] SETTINGS FOR SOURCE VOLTAGE AND VCOM VOLTAGE ................................................... 16
+TABLE 6-7 : EXAMPLE OF 12-BIT BINARY TEMPERATURE SETTINGS FOR TEMPERATURE RANGES ................................... 18
+TABLE 6-8 : EXAMPLE OF WAVEFORM SETTINGS SELECTION BASED ON TEMPERATURE RANGES. ................................... 19
+TABLE 7-1: COMMAND TABLE ................................................................................................................................ 22
+TABLE 8-1 : POR SETTINGS FOR DRIVER OUTPUT CONTROL (COMMAND 0X01) ......................................................... 36
+TABLE 8-2 : OUTPUT PIN ASSIGNMENT SEQUENCE OF SM AND GD SETTINGS ............................................................. 36
+TABLE 8-3 : POR SETTINGS FOR DATA ENTRY MODE SETTING (COMMAND 0X11) ...................................................... 38
+TABLE 8-4 : ADDRESS COUNTER DIRECTIONS OF ID AND AM SETTINGS (COMMAND 0X11) ........................................... 38
+TABLE 8-5 : POR SETTINGS FOR SET RAM X - ADDRESS START / END POSITION (COMMAND 0X44) ............................ 39
+TABLE 8-6 : POR SETTINGS FOR SET RAM Y - ADDRESS START / END POSITION (COMMAND 0X45) ............................ 39
+TABLE 8-7 : POR SETTINGS FOR SET RAM ADDRESS COUNTER (COMMAND 0X4E~4F) ............................................. 40
+TABLE 10-1 : MAXIMUM RATINGS ........................................................................................................................... 42
+TABLE 11-1: DC CHARACTERISTICS ....................................................................................................................... 42
+TABLE 11-2: REGULATORS CHARACTERISTICS ........................................................................................................ 43
+TABLE 12-1 : SERIAL PERIPHERAL INTERFACE TIMING CHARACTERISTICS .................................................................. 44
+TABLE 13-1: COMPONENT LIST FOR SSD1677 APPLICATION CIRCUIT ........................................................................ 45
+
+
+FIGURES
+FIGURE 4-1 : SSD1677 BLOCK DIAGRAM ................................................................................................................. 7
+FIGURE 6-1 : W RITE PROCEDURE IN 4-WIRE SPI MODE ............................................................................................ 12
+FIGURE 6-2 : READ PROCEDURE IN 4-WIRE SPI MODE.............................................................................................. 13
+FIGURE 6-3 : W RITE PROCEDURE IN 3-WIRE SPI ..................................................................................................... 13
+FIGURE 6-4 : READ PROCEDURE IN 3-WIRE SPI MODE.............................................................................................. 14
+FIGURE 6-5 : GATE WAVEFORM AND PROGRAMMABLE SOURCE AND VCOM WAVEFORM ILLUSTRATION ......................... 15
+FIGURE 6-6 : W AVEFORM LUT .............................................................................................................................. 17
+FIGURE 6-7 : THE W AVEFORM SETTING MAPPING IN OTP FOR WAVEFORM SETTING AND TEMPERATURE RANGE ............. 20
+FIGURE 6-8 : FORMAT OF TEMPERATURE RANGE (TR) IN OTP ................................................................................. 21
+FIGURE 8-1: OUTPUT PIN ASSIGNMENT ON DIFFERENT SETTING OF GD AND SM ......................................................... 37
+FIGURE 9-1: OPERATION FLOW TO DRIVE DISPLAY PANEL ......................................................................................... 41
+FIGURE 12-1: SPI TIMING DIAGRAM........................................................................................................................ 44
+FIGURE 13-1: SCHEMATIC OF SSD1677 APPLICATION CIRCUIT ................................................................................. 45
+FIGURE 14-1 : SSD1677Z AND SSD1677Z8 TRAY INFORMATION ............................................................................. 46
+
+
+
+
+SSD1677                Rev 1.0          P 4/47             Nov 2018                                                              Solomon Systech
+1   General Description
+    The SSD1677 is an Active Matrix EPD Display Driver with Controller which can support Red/Black/White.
+    It consists of 960 source outputs, 680 gate outputs, 1 VCOM and 1 VBD for border that can support a
+    maximum display resolution 960x680.
+    The SSD1677 embeds booster, regulators and oscillator. Data/Commands are sent from general MCU
+    through the hardware selectable Serial peripheral.
+
+2   Features
+     Design for dot matrix type active matrix EPD display
+     Support Red/Black/White mono color
+     Resolution: 960 source outputs; 680 gate outputs; 1 VCOM; 1VBD for border
+     Power supply:
+        VCI:       2.2 to 3.3V
+        VDDIO:       Connect to VCI
+        VDD:         1.8V, regulate from VCI supply
+     On chip display RAM
+        Mono B/W: 960x680 bits
+             Mono Red: 960x680 bits
+     On-chip booster and regulator for generating VCOM, Gate and Source driving voltage
+     Gate driving output voltage:
+        2 levels output (VGH, VGL)
+        Max 40Vp-p
+        VGH: 15V to 20V; VGL: -VGH
+        Voltage adjustment step: 500mV
+     Source / VBD driving output voltage:
+        4 levels output (VSH1, VSS, VSL, and VSH2)
+               VSH1: 9V to 17V (200mV for 9V to 17V)
+               VSH2: 2.4V to 17V (Voltage step: 100mV for 2.4V to 8.8V, 200mV for 8.8V to 17V)
+               VSL: -9V to -17V (Voltage step: 500mV)
+              
+           VCOM output voltage
+           DCVCOM                                  ACVCOM
+          -4V to -0.1V in 100mV resolution          3 levels output
+                                                          VSH1+DCVCOM, DCVCOM, VSL+DCVCOM
+
+
+     VGH, VGL, VSH1, VSH2, VSL can be connected to external power supply
+     Built-in VCOM sensing
+     On-chip oscillator
+     Programmable output waveform:
+           40 phases (4 phases/group, 10 groups with repeat function)
+        1 to 256 times for repeat count
+        Max. 255 frame/phase
+     On-chip OTP to store the waveform settings and parameters:
+        34 sets of waveform setting (WS) including waveform LUT, gate/source voltage and frame rate
+           34 sets of Temperature Range (TR)
+           VCOM value
+           Waveform version
+        Module identification/User ID
+     Embedded OTP to store the initial code setting
+
+
+SSD1677           Rev 1.0    P 5/47     Nov 2018                                         Solomon Systech
+       External or internal generated voltage for burning OTP
+       Read OTP function and Built-in CRC checking method for waveform setting and temperature range in
+        OTP
+       Support Low voltage detect for supply voltage
+       Support High voltage ready detect for driving voltage with looping
+         Support black/white mono dithering feature
+         Support panel break diagnostic
+         Support display partial update
+         Auto write RAM command for regular pattern
+       Internal Temperature Sensor, -25 to 50 degC: accuracy +/- 2degC / 9- bit status
+       I2C Single Master Interface to communicate with external temperature sensor
+       MCU interface: SPI serial peripheral, Maximum 20MHz for write
+       Low current consumption for operation and sleep mode
+       Available in COG package
+
+
+3     ORDERING INFORMATION
+                                          Table 3-1 : Ordering Information
+
+      Ordering Part Number              Package Form                             Remark
+                                                              Bump Face Up
+                                                              On Waffle pack
+    SSD1677Z                            Gold Bump Die
+                                                              Die thickness: 300um
+                                                              Bump height: 12um
+                                                              Bump Face Down
+                                                              On Waffle pack
+    SSD1677Z8                           Gold Bump Die
+                                                              Die thickness: 300um
+                                                              Bump height: 12um
+
+
+
+
+SSD1677           Rev 1.0     P 6/47       Nov 2018                                       Solomon Systech
+4   Block Diagram
+
+
+                                                                   SOURCE
+                                                 GATE                                    VBD         VCOM
+
+
+
+
+                                                                                         V
+             VGH                           Gate Buffer         Source Buffer             B          VCOM
+             VGL              External                                                   D
+             VSH1             Driving
+             VSH2              Power
+              VSL
+                                input
+
+
+                                                          Panel Driving Control
+
+             GDR
+                                                                                                                                 VPP
+            RESE
+            VGHR
+                                                                  Waveform Selection                           OTP
+                                  Analog Block for
+            VGLR                                                                                             Waveform
+                                 Panel Driving Power
+            VSH1R                                                            LUT                              Setting
+            VSH2R
+             VSLR                                                                                              [WS]
+                                                                                                            Temperature
+             VDD                VDD                                         LOGIC                           Range [TR]
+          EXT_VDD             Regulator
+
+                                                RAM
+               CL             Oscillator
+                                               Ctrl Bus
+
+
+
+                                                                                                            I2C MASTER          TSCL,
+                                                                                                                                TSDA
+                                           RAM                                                                Internal
+                                                                                       Mode                 Temperature         VDDIO
+                                                                MCU Interface
+                                                                                      Selection               Sensor
+                                                                                                                                VCI/
+                                                                                                                                VCIQS/
+                                                                                                                                VCIGS
+                                                               SDO
+                                                                               BUSY
+                                                                                       BS1   M/S#
+                                                               SDI
+                                                               SCL
+                                                               CS#
+                                                               D/C#
+                                                               RES#
+                                                                                                                     VSS/
+                                                                                                                     VSSQS/
+                                                                                                                     VSSGS
+
+
+
+                                                 Figure 4-1 : SSD1677 Block Diagram
+
+
+
+
+SSD1677             Rev 1.0       P 7/47            Nov 2018                                                                  Solomon Systech
+5 PIN DESCRIPTION
+Key:
+     I = Input
+     O =Output
+     IO = Bi-directional (input/output)
+     P = Power pin
+     C = Capacitor Pin
+     NC = Not Connected
+
+                                                     Table 5-1: Power Supply Pins
+
+  Name    Type Connect to           Function                            Description                         When not
+                                                                                                             in use
+   VCI     P    Power Supply Power Supply This pin is Power input pin for the chip.                             -
+
+  VCIGS    P    Power Supply Power Supply This pin is Power input pin for the chip.                              -
+                                          - Connect to VCI in the application circuit.
+
+  VCIQS    P    Power Supply Power Supply This pin is Power input pin for the chip.                              -
+                                          - Connect to VCI in the application circuit.
+
+
+  VDDIO    P    Power Supply Power for       This pin is Power input pin for the Interface.                      -
+                             interface logic - Connect to VCI in the application circuit.
+                             pins
+   VDD     P     Capacitor Regulator         This pin is Core logic power pin                                    -
+                             output          VDD can be regulated internally from VCI.
+                                             A capacitor should be connected between VDD and VSS
+                                             under all circumstances.
+ EXTVDD    I         VSS      Regulator        This pin is VDD regulator bypass pin.                             -
+                              bypass           EXTVDD should be connected to VSS in the application
+                                               circuit.
+
+
+   VSS     P         VSS      GND              This pin is Ground pin                                            -
+
+  VSSGS    P         VSS      GND              This pin is Ground pin.                                           -
+                                               - Connect to VSS in the application circuit.
+
+  VSSQS    P         VSS      GND              This pin is Ground pin.                                           -
+                                               - Connect to VSS in the application circuit.
+
+
+   VPP     P    Power Supply OTP power         This pin is Power Supply for OTP Programming.                    Open
+
+
+
+
+SSD1677        Rev 1.0     P 8/47         Nov 2018                                            Solomon Systech
+                                                        Table 5-2: Interface Logic Pins
+
+                                                                                                                     When not
+  Name    Type Connect to               Function                             Description
+                                                                                                                      in use
+   SCL     I          MPU         Data Bus         This pin is Serial clock pin for interface:                           -
+                                                   Refer to Session 6.1 - MCU Interface.
+   SDI     I          MPU         Data Bus         This pin is Serial data pin for interface:                             -
+                                                   Refer to Session 6.1 - MCU Interface.
+   SDO     O                                                                                                             Open
+   CS#     I          MPU         Logic Control This pin is the chip select input connecting to the MCU.             VDDIO or
+                                                Refer to Session 6.1 - MCU Interface.                                  VSS
+   D/C#    I          MPU         Logic Control This pin is Data/Command control pin connecting to the               VDDIO or
+                                                MCU. Refer to Session 6.1- MCU Interface.                              VSS
+  RES#     I          MPU         System        This pin is reset signal input.                                         -
+                                  Reset         Active Low.
+  BUSY     O          MPU         Device Busy This pin is Busy state output pin                                          Open
+                                  Signal        When Busy is High, the operation of the chip should not be
+                                                interrupted, and command should not be sent.
+                                                For example., The chip would put Busy pin High when
+                                                - Outputting display waveform; or
+                                                - Programming with OTP
+                                                - Communicating with digital temperature sensor
+
+
+
+   BS1     I      VDDIO/VSS MCU                    This pin is for selecting 3-wire or 4-wire SPI bus.                    -
+                            Interface
+                            Mode                                BS1           MCU Interface
+                            Selection                           L             4-wire SPI
+                                                                H             3-wire SPI(9 bits SPI)
+
+
+   M/S#    I         VDDIO        Reserved for This pin is reserved pin and should be connected to VDDIO.                 -
+                                  Testing
+
+    CL    I/O             NC      Clock signal This is the clock signal pin. It should be left open in                   Open
+                                               application.
+
+
+  TSDA    I/O    Temperature Interface to This pin is I2C Interface to digital temperature sensor Data                   Open
+                 sensor SDA Digital Temp. pin.
+                             Sensor       External pull up resistor is required when connecting to I2C
+                                          slave.
+
+
+   TSCL    O     Temperature Interface to This pin is I2C Interface to digital temperature sensor Clock                  Open
+                 sensor SCL Digital Temp. pin.
+                             Sensor       External pull up resistor is required when connecting to I2C
+                                          slave.
+
+
+
+
+SSD1677         Rev 1.0        P 9/47        Nov 2018                                                  Solomon Systech
+                                                       Table 5-3: Analog Pins
+                                                                                                                  When
+                    Connect
+   Name   Type                       Function                            Description                              not in
+                      to
+                                                                                                                   use
+   GDR     O      POWER         VGHR,              This pin is N-Channel MOSFET gate drive control pin.             -
+                  MOSFET        VGLR
+                  Driver        Generation
+                  Control
+   RESE    I      Booster                          This pin is Current sense input pin for the control Loop.        -
+                  Control
+                  Input
+   VGHR    C      Stabilizing                      This pin is Positive Gate driving voltage regulation.    Open
+                  capacitor                        Connect a stabilizing capacitor between VGHR and VSS
+                                                   in the application circuit.
+   VGLR    C      Stabilizing                      This pin is Negative Gate driving voltage regulation.    Open
+                  capacitor                        Connect a stabilizing capacitor between VGLR and
+                                                   VSS in the application circuit.
+  VSH1R    C      Stabilizing   VSH1R,             This pin is Positive Source driving voltage regulation - Open
+                  capacitor     VSH2R, VSLR        VSH1R.
+                                Generation         Connect a stabilizing capacitor between VSH1R and
+                                                   VSS in the application circuit.
+  VSH2R    C      Stabilizing                      This pin is Positive Source driving voltage regulation – Open
+                  capacitor                        VSH2R.
+                                                   Connect a stabilizing capacitor between VSH2R and
+                                                   VSS in the application circuit.
+   VSLR    C      Stabilizing                      This pin is Negative Source driving voltage regulation.  Open
+                  capacitor                        Connect a stabilizing capacitor between VSLR and
+                                                   VSS in the application circuit.
+   VGH     P      VGH supply                       This pin is Positive Gate driving voltage.               VGHR
+   VGL     P      VGL supply                       This pin is Negative Gate driving voltage.               VGLR
+
+   VSH1    P      VSH1                             This pin is Positive Source driving voltage - VSH1.         VSH1R
+                  supply
+   VSH2    P      VSH2                             This pin is Positive Source driving voltage - VSH2.         VSH2R
+                  supply
+    VSL    P      VSL supply                       This pin is Negative Source driving voltage.                   VSLR
+
+
+
+                                                Table 5-4: External Power Supply Pins
+                                                                                                                  When
+                    Connect
+   Name   Type                       Function                            Description                              not in
+                      to
+                                                                                                                   use
+   VGH     P      VGH supply                       This pin is Positive Gate driving voltage.                     VGHR
+   VGL     P      VGL supply                       This pin is Negative Gate driving voltage.                     VGLR
+
+   VSH1    P      VSH1       Analog Pins for This pin is Positive Source driving voltage - VSH1.               VSH1R
+                  supply     External Power
+   VSH2    P      VSH2       Supply          This pin is Positive Source driving voltage - VSH2.               VSH2R
+                  supply
+    VSL    P      VSL supply                 This pin is Negative Source driving voltage.                         VSLR
+
+
+
+
+SSD1677        Rev 1.0     P 10/47        Nov 2018                                              Solomon Systech
+                                                           Table 5-5: Driver Output Pins
+
+                                                                                                                     When not
+  Name       Type Connect to               Function                            Description
+                                                                                                                      in use
+ S [959:0]    O        Panel             Source         These pins are Source output pin.                              Open
+                                         driving signal
+ G [679:0]    O        Panel             Gate driving These pins are Gate output pin.                                    Open
+                                         signal
+   VBD        O        Panel             Border         This pin is Border output pin.                                   Open
+                                         driving signal
+  VCOM        C        Panel/            VCOM           This pin is VCOM driving voltage                                  -
+                       Stabilizing       Generation Connect a stabilizing capacitor between VCOM and
+                       capacitor                        VSS in the application circuit.
+
+
+                                                           Table 5-6: Miscellaneous Pins
+
+ Name        Type         Connect to Function              Description                                               When not
+                                                                                                                     in use
+    RSV        NC               NC        Reserved         This pin is a reserved pin, keep floating                    Open
+
+  DP[0:33]        I             VSS       Reserved         These pins are reserved pins, connect to VSS.                 VSS
+
+ TP1,TP2,      NC               NC        Reserved for     Reserved pins.                                                Open
+ TP3,TP4,                                 Testing          - Keep open.
+ TP5,TP6,                                                  - Don’t connect to other NC pins and test pins
+ TP7,TP8,                                                    including      TP1,TP2,TP3,TP4,TP5,TP6, TP7,TP8
+   TP9                                                       and TP9
+   TIN            I             NC        Reserved for     Reserved pins.                                                Open
+                                          Testing          - Keep open.
+    TPE           O             NC                                                                                       Open
+
+
+
+
+SSD1677               Rev 1.0        P 11/47    Nov 2018                                               Solomon Systech
+6 Functional Block Description
+6.1 MCU Interface
+    6.1.1 MCU Interface selection
+      SSD1677 can support 4-wire or 3-wire serial peripheral MCU interface, which is pin selectable by BS1 pin.
+      The interface pin assignment for different MCU interfaces is shown in Table 6-1.
+
+                                Table 6-1: Interface pin assignment for different MCU interfaces
+                                                                                     Pin Name
+MCU Interface                               BS1            RES#               CS#      D/C#         SCL           SDI         SDO
+4-wire serial peripheral
+                                             L             RES#               CS#        DC#        SCL                 SDA
+interface (SPI)
+3-wire serial peripheral
+                                             H             RES#               CS#          L        SCL                 SDA
+interface (SPI) – 9 bits SPI
+
+      Note:
+      (1) L is connected to VSS and H is connected to VDDIO
+      (2) SDI and SDO are connected to be SDA pin for bi-directional data access
+
+
+
+      6.1.2         MCU Serial Interface (4-wire SPI)
+      The 4-wire SPI consists of serial clock SCL, serial data input SDI, D/C# and CS#. The control pins status in
+      4-wire SPI in writing command/data is shown in Table 6-2 and the write procedure in 4-wire SPI is shown in
+      Figure 6-1.
+
+                                            Table 6-2 : Control pins status of 4-wire SPI
+
+                    Function                 SCL pin                 SDI pin             D/C# pin     CS# pin
+                    Write command                 ↑              Command bit                L              L
+                    Write data                    ↑                Data bit                 H              L
+
+      Note:
+      (1) L is connected to VSS and H is connected to VDDIO
+      (2) ↑ stands for rising edge of signal
+
+      SDI is shifted into an 8-bit shift register on every rising edge of SCL in the order of D7, D6, ... D0. The level
+      of D/C# should be kept over the whole byte. The data byte in the shift register is written to the Graphic
+      Display Data RAM (RAM)/Data Byte register or command Byte register according to D/C# pin.
+
+
+
+                        CS#
+
+
+
+                         D/C#
+            Write
+            Mode
+                         SCL
+
+
+
+
+                          SDI        D7      D6       D5    D4           D3    D2   D1     D0
+
+                                                            Register                                      Parameter
+
+                         SDO
+                                                              Floating
+
+
+
+                                          Figure 6-1 : Write procedure in 4-wire SPI mode
+
+
+
+
+SSD1677             Rev 1.0       P 12/47         Nov 2018                                                      Solomon Systech
+      In the read operation, after CS# is pulled low, the first byte sent is command byte, D/C# is pulled low. After
+      command byte sent, the following byte(s) read are data byte(s), so D/C# bit is then pulled high. An 8-bit
+      data will be shifted out on every clock falling edge. The serial data output SDO bit shifting sequence is D7,
+      D6, to D0 bit. Figure 6-2 shows the read procedure in 4-wire SPI.
+
+
+                          CS#
+
+
+
+                          D/C#
+
+
+          Read
+          Mode             SCL
+
+
+                                                                      Register                                                  Parameter
+
+                            SDI            D7        D6        D5     D4          D3        D2        D1      D0
+
+
+
+                            SDO                                                                                    D7                   D0
+                                                                       Floating
+
+
+
+
+                                                Figure 6-2 : Read procedure in 4-wire SPI mode
+
+      6.1.3       MCU Serial Peripheral Interface (3-wire SPI)
+      The 3-wire SPI consists of serial clock SCL, serial data input SDI, and CS#. The operation is similar to 4-
+      wire SPI while D/C# pin is not used and it must be tied to LOW. The control pins status in 3-wire SPI is
+      shown in Table 6-3.
+
+      In the write operation, a 9-bit data will be shifted into the shift register on every clock rising edge. The bit
+      shifting sequence is D/C# bit, D7 bit, D6 bit to D0 bit. The first bit is D/C# bit which determines the
+      following byte is command or data. When D/C# bit is 0, the following byte is command. When D/C# bit is 1,
+      the following byte is data. Table 6-3 shows the write procedure in 3-wire SPI
+
+
+                                                    Table 6-3 : Control pins status of 3-wire SPI
+
+                  Function                           SCL pin                      SDI pin                   D/C# pin         CS# pin
+                  Write command                            ↑               Command bit                      Tie LOW            L
+                  Write data                               ↑                 Data bit                       Tie LOW            L
+      Note:
+      (1) L is connected to VSS and H is connected to VDDIO
+      (2) ↑ stands for rising edge of signal
+
+
+
+                                CS#
+
+
+
+                                 SCL
+              Write
+              Mode
+
+                                  SDI           0     D7       D6   D5       D4        D3        D2     D1    D0   1    D7
+
+
+                                                                              Register                                   Parameter
+
+                                  SDO                                                            Floating
+
+
+
+                                                     Figure 6-3 : Write procedure in 3-wire SPI
+
+
+
+
+SSD1677               Rev 1.0           P 13/47            Nov 2018                                                                  Solomon Systech
+      In the read operation, serial data are transferred in the unit of 9 bits. After CS# pull low, the first byte is
+      command byte, the D/C# bit is as 0 and following with the register byte. After command byte send, the
+      following byte(s) are data byte(s), with D/C# bit is 1. After D/C# bit sending from MCU, an 8-bit data will be
+      shifted out on every clock falling edge. The serial data output SDO bit shifting sequence is D7, D6, to D0
+      bit. Figure 6-4 shows the read procedure in 3-wire SPI.
+
+
+           CS#
+
+
+
+            SCL
+
+   Read
+   Mode                                                 Register                                      Parameter
+
+            SDI             0    D7       D6   D5       D4         D3     D2   D1    D0      1                     Floating
+
+
+
+
+            SDO                                                                                       D7                D0
+                                                       Floating
+
+
+
+
+                                      Figure 6-4 : Read procedure in 3-wire SPI mode
+
+6.2   Oscillator
+      The oscillator module generates the clock reference for waveform timing and analog operations.
+
+6.3   Booster & Regulator
+      A voltage generation system is included in the driver. It provides all necessary driving voltages required for
+      an AMEPD panel including VGHR, VGLR, VSH1R, VSH2R, VSLR and VCOM. External application circuit
+      is needed to make the on-chip booster & regulator circuit work properly.
+                                                          L1
+
+
+
+
+                                                                                                 C3
+                                               VCI                  GDR        Q1
+                                               VDDIO               RESE
+                                                                               R1    D1     D2        D3          VGH & VGL
+                                               VDD                                                                Generator
+                     C0         C1
+                                               VSS                 VGHR
+                                                                                     C2
+
+                                                                   VGLR         C4
+
+                                                                  VSH1R                   VSH1
+                                                                                C5        Generator
+
+                                                                  VSH2R                   VSH2
+                                                                                C6        Generator
+              VCOM                             VCOM                VSLR                   VSL
+                                C8                                              C7
+              Generator                                                                   Generator
+
+
+      With internal power mode, it needs connecting VGHR to VGH, VGLR to VGL, VSH1R to VSH1, VSH2R to
+      VSH2 and VSLR to VSL.
+      SSD1677 support external Gate power [VGH/VGL] and Source power [VSH1/VSH2/VSL]. When external
+      power is connected, VGHR, VGLR, VSH1R, VSH2R and VSL are floating.
+
+6.4   VCOM Sensing
+      This functional block provides the scheme to sense and set VCOM. The sensed value can also be
+      programmed into OTP.
+
+
+
+
+SSD1677           Rev 1.0       P 14/47        Nov 2018                                                      Solomon Systech
+6.5      RAM
+         The on-chip display RAM is holding the image data.
+         1 set of RAM is built for Mono B/W. The RAM size is 960x680 bits.
+         1 set of RAM is built for Mono Red. The RAM size is 960x680 bits.
+                                               Table 6-4 : RAM bit and LUT mapping for 3-color display
+
+               Data bit in R RAM                 Data bit in B/W RAM                               Image Color                        LUT
+                        0                                  0                                          Black                  LUT 0 for driving Black
+                        0                                  1                                          White                  LUT 1 for driving White
+                        1                                  0                                          Red                     LUT 2 for driving Red
+                        1                                  1                                          Red                        LUT 3 = LUT2
+
+                                             Table 6-5 : RAM bit and LUT mapping for black/white display
+
+               Data bit in R RAM                 Data bit in B/W RAM                               Image Color                                LUT
+                        0                                  0                                          Black                   LUT 0 for driving Black
+                        0                                  1                                          White                   LUT 1 for driving White
+                        1                                  0                                          Black                      LUT 2 = LUT0
+                        1                                  1                                          White                      LUT 3 = LUT1
+
+
+
+
+6.6      Programmable Waveform for Gate, Source and VCOM
+         SSD1677 provides a high flexibility to program the driving waveform. Figure 6-5 illustrates the
+         programmable waveform format for Gate, Source and VCOM.
+                                             RP[n]: Repeat the group from 1 to 256 times
+                                             RP[0]                                         RP[1]                                              RP[9]
+
+
+                                                                  Group 0                                  Group 1                                              Group 9
+
+
+
+                                              Phase0A     Phase0B     Phase0C    Phase0D    Phase1A   Phase1B   Phase1C   Phase1D             Phase9A    Phase9B     Phase9C   Phase9D
+                                      VGH
+
+ Gate Signal                                                                                                                        ... ...
+
+                                       VGL
+
+VS[nX-LUTm] settings for LUT0~3                  10          10             01      11         00        00          01     00                   10        10             01     11
+                                      VSH1
+                                      VSH2
+                                       VSS                                                                                          ... ...
+   Source Signal
+
+                                       VSL
+
+VS[nX-LUTm] settings for LUT4                    10          10             01      01         00        00          01     00                   10        10             01     01
+                           VSH1+DCVCOM
+
+                                   DCVCOM                                                                                           ... ...
+  VCOM Signal
+
+
+                                VSL+DCVCOM
+
+
+                                               TP[0A]      TP[0B]       TP[0C]   TP[0D]      TP[1A]    TP[1B]   TP[1C]    TP[1D]                TP[9A]    TP[9B]      TP[9C]    TP[9D]
+
+                                               TP[nX]: Time of phase length from 0 to 255 frames
+                                                       0 indicates phase skipped
+
+                      Figure 6-5 : Gate waveform and Programmable Source and VCOM waveform illustration
+
+
+
+
+SSD1677                   Rev 1.0            P 15/47                Nov 2018                                                                      Solomon Systech
+      In the programmable waveform for Source and VCOM, there are 10 groups (Group0 to Group9) and each
+      group has 4 phases (Phase A to Phase D). Totally, there are 40 phases. In addition, in each phase, the
+      phase length (TP[nX]) can be set by number of frame from 0 to 255 frames. Also, each group can be
+      repeated with repeat counting number (RP[n]) from 1 to 256 times. For the voltage, there is four levels for
+      Source voltage (VSS, VSH1, VSH2, VSL) and three levels for VCOM voltage (DCVCOM, VSH1+DCVCOM,
+      VSL+DCVOM).
+
+      The description of each parameter is as follows.
+
+           1)   TP[nX] represents the phase length set by the number of frame.
+               The range of TP[nX] is from 0 to 255.
+               n represents the Group number from 0 to 9; X represents the phase number from A to D.
+               When TP[nX] = 0, the phase is skipped. When TP[nX] = 1, the phase is 1 frame, and so on. The
+                maximum phase length is 255 frame.
+
+           2)   RP[n] represents the repeat counting number for the Group.
+               The range of RP[n] is from 0 to 255.
+               n represents the Group number from 0 to 9.
+               RP[n] = 0 indicates that the repeat times =1, RP[n] = 1 indicates that the repeat times = 2, and so
+                on. The maximum repeat times is 256.
+
+           3) VS[nX-LUTm] represents Source and VCOM voltage level which is used in each phase. Table
+              6-6 shows the voltage settings for source voltage and VCOM voltage.
+            n represents the Group number from 0 to 9.
+            m represents the LUT number from 0-4.
+
+
+                          Table 6-6 : VS[nX-LUTm] settings for Source voltage and VCOM voltage
+                           VS[nX-LUTm]         Source voltage         VCOM voltage
+                                00                  VSS                 DCVCOM
+                                01                 VSH1             VSH1 + DCVCOM
+                                10                  VSL              VSL + DCVCOM
+                                11                 VSH2                   N/A
+
+
+
+
+SSD1677         Rev 1.0      P 16/47      Nov 2018                                            Solomon Systech
+6.7   Waveform Lookup Table (LUT)
+      As described in Section 6.6, parameters TP[nX], RP[n] and VS[nX-LUTm] are used to define the driving
+      waveform. In the SSD1677, there are 112 bytes in the waveform lookup table to store LUT0, LUT1, LUT2,
+      LUT3 and LUT4, gate voltage, source voltage and frame rate. The waveform LUT of a particular
+      temperature range can be loaded from OTP or written by MCU.
+
+       WS byte 0~104, the content of VS [n-XY], TP [n#], RP[n] and frame rate are defined by Register 0x32
+       WS byte 105, the content of gate level, is the parameter defined by Register 0x03.
+       WS byte 106~108, the content of source level, is the parameter defined by Register 0x04.
+       WS byte 109, the content of VCOM level, is the parameter defined by Register 0x2C.
+       WS byte 110~111, the contents are reserved.
+
+      The SSD1677 waveform LUT is shown in Figure 6-6.
+                                     D7       D6     D5       D4            D3        D2   D1       D0
+                              0       VS[0A-L0]       VS[0B-L0]               VS[0C-L0]     VS[0D-L0]
+                              1       VS[1A-L0]       VS[1B-L0]               VS[1C-L0]     VS[1D-L0]
+                              2       VS[2A-L0]       VS[2B-L0]               VS[2C-L0]     VS[2D-L0]
+                              3       VS[3A-L0]       VS[3B-L0]               VS[3C-L0]     VS[3D-L0]
+                              4       VS[4A-L0]       VS[4B-L0]               VS[4C-L0]     VS[4D-L0]
+                              5       VS[5A-L0]       VS[5B-L0]               VS[5C-L0]     VS[5D-L0]
+                              6       VS[6A-L0]       VS[6B-L0]               VS[6C-L0]     VS[6D-L0]
+                              7       VS[7A-L0]       VS[7B-L0]               VS[7C-L0]     VS[7D-L0]
+                              8       VS[8A-L0]       VS[8B-L0]               VS[8C-L0]     VS[8D-L0]
+                              9       VS[9A-L0]       VS[9B-L0]               VS[9C-L0]     VS[9D-L0]
+                             10       VS[0A-L1]       VS[0B-L1]               VS[0C-L1]     VS[0D-L1]
+                             11       VS[1A-L1]       VS[1B-L1]               VS[1C-L1]     VS[1D-L1]
+                             …
+                             19       VS[9A-L1]       VS[9B-L1]               VS[9C-L1]     VS[9D-L1]
+                             20       VS[0A-L2]       VS[0B-L2]               VS[0C-L2]     VS[0D-L2]
+                             21       VS[1A-L2]       VS[1B-L2]               VS[1C-L2]     VS[1D-L2]
+                             …
+                             29       VS[9A-L2]       VS[9B-L2]               VS[9C-L2]     VS[9D-L2]
+                             …
+                             …
+                             40       VS[0A-L4]       VS[0B-L4]               VS[0C-L4]     VS[0D-L4]
+                             41       VS[1A-L4]       VS[1B-L4]               VS[1C-L4]     VS[1D-L4]
+                             …
+                             49       VS[9A-L4]       VS[9B-L4]               VS[9C-L4]     VS[9D-L4]
+                             50                                    TP[0A]
+                             51                                    TP[0B]
+                             52                                    TP[0C]
+                             53                                    TP[0D]
+                             54                                    RP[0]
+                             55                                    TP[1A]
+                             56                                    TP[1B]
+                             57                                    TP[1C]
+                             58                                    TP[1D]
+                             59                                    RP[1]
+                             …                                       …
+                             …                                       …
+                             95                                    TP[9A]
+                             96                                    TP[9B]
+                             97                                    TP[9C]
+                             98                                    TP[9D]
+                             99                                    RP[9]
+                             100
+                             101
+                             102                          5 bytes for frame rate
+                             103
+                             104
+                             105                                    VGH
+                             106                                   VSH1
+                             107                                   VSH2
+                             108                                    VSL
+                             109                                   VCOM
+                             110                                  Reserve 1
+                             111                                  Reserve 2
+                                              Figure 6-6 : Waveform LUT
+
+
+
+
+SSD1677         Rev 1.0    P 17/47        Nov 2018                                                       Solomon Systech
+6.8   Temperature Sensing
+      The SSD1677 has internal temperature sensor to detect the environment temperature or can communicate
+      with the external temperature sensor by I2C single master interface or can communicate with the external
+      MCU to get the temperature value through SPI. In the SSD1677, there is a dedicated format for the
+      temperature value so that the driver IC can understand it. The format of temperature value is described in
+      Section 6.8.3.
+
+      6.8.1      Internal Temperature Sensor
+      The internal temperature sensor can be selected by command register. The accuracy of it is ±2degC from
+      -25degC to 50degC.
+
+      6.8.2      External Temperature Sensor I2C Single Master Interface
+      The driver IC can communicate with the external temperature sensor through I2C single master interface
+      (TSDA and TSCL). TSDA will be SDA and TSCL will be SCL. TSDA and TSCL are required to connect with
+      external pull-up resistor. Temperature register value of external temperature sensor can be read by
+      command register.
+
+      6.8.3      Format of temperature value
+      The temperature value is defined by 12-bit binary. The rules are shown as below.
+            If the Temperature value MSByte bit D11 = 0, then
+              the temperature is positive and value (DegC) = + (Temperature value) / 16
+            If the Temperature value MSByte bit D11 = 1, then
+              the temperature is negative and value (DegC) = - (2’s complement of Temperature value) / 16
+
+          Table 6-7 shows some examples of 12-bit binary temperature value:
+
+                     Table 6-7 : Example of 12-bit binary temperature settings for temperature ranges
+
+                               12-bit binary              Hexadecimal             TR Value
+                            (2's complement)                 Value                 [DegC]
+                             0111 1111 1111                   7FF                    128
+                             0111 1111 1111                   7FF                   127.9
+                             0110 0100 0000                   640                    100
+                             0101 0000 0000                   500                     80
+                             0100 1011 0000                   4B0                     75
+                             0011 0010 0000                   320                     50
+                             0001 1001 0000                   190                     25
+                             0000 0000 0100                    4                     0.25
+                             0000 0000 0000                    0                       0
+                             1111 1111 1100                  FFC                    -0.25
+                             1110 0111 0000                   E70                    -25
+                             1100 1001 0000                   C90                    -55
+
+
+
+
+SSD1677           Rev 1.0    P 18/47       Nov 2018                                            Solomon Systech
+6.9   Waveform LUT Searching Mechanism
+      As mentioned in Section 6.7, the SSD1677 OTP can store waveform LUT settings and temperature range.
+      If waveform LUT settings and temperature range are programmed in OTP memory, corresponding
+      waveform LUT can be selected according to the sensed temperature to drive the display. The waveform
+      LUT searching mechanism by driver IC is as follows.
+          1) Read temperature value by command register in the format of 12-bit binary.
+          2) According to read temperature and display mode selection, search LUT in OTP from TR0 to TR33 in
+             sequence. The last match will be selected, then, the corresponding WS will be loaded in the LUT
+             register to drive the display.
+
+      Remark: Waveform LUT selection criteria is “Lower temperature bound < Sensed temperature ≤ Upper
+      temperature bound”.
+
+      Table 6-8 shows an example for the waveform LUT searching from OTP:
+           If the read temperature is 25degC, then, WS4 will be selected.
+           If the read temperature is 34degC, then, WS7 will be selected. Although 34degC is also in the
+               temperature range TR6, according to searching mechanism, the last match should be selected.
+               Therefore, WS7 is selected.
+                   Table 6-8 : Example of waveform settings selection based on temperature ranges.
+   Waveform        Temperature          TR Lower Limit TR Upper Limit         Temperature range in OTP
+  LUT in OTP       Range in OTP             [Hex]          [Hex]
+     WS0               TR0                   800            050           -128 DegC < Temperature ≤ 5 DegC
+     WS1               TR1                   050            0A0             5 DegC < Temperature ≤ 10DegC
+     WS2               TR2                   0A0            0F0            10 DegC < Temperature ≤ 15DegC
+     WS3               TR3                   0F0            140            15 DegC < Temperature ≤ 20DegC
+     WS4               TR4                   140            190            20 DegC < Temperature ≤ 25DegC
+     WS5               TR5                   190            1E0            25 DegC < Temperature ≤ 30DegC
+     WS6               TR6                   1E0            230            30 DegC < Temperature ≤ 35DegC
+     WS7               TR7                   210            7FF          33 DegC < Temperature ≤ 127.9DegC
+    Others            Others                 000            000
+
+          Precaution:
+          Please ensure the temperature range covers whole range of application temperatures, display will not be
+          updated if no suitable temperature range matches the sensed temperature.
+
+
+
+
+SSD1677           Rev 1.0     P 19/47        Nov 2018                                         Solomon Systech
+6.10 One Time Programmable (OTP) Memory
+      In the SSD1677, there is an embedded OTP memory which is designed to store the waveform settings of
+      different temperature range and some variables/parameters. The OTP memory can store 34 sets of
+      waveform LUT settings (WS), 34 sets of temperature range (TR), VCOM value, display mode selection,
+      waveform version and user ID. Figure 6-7 shows the address mapping of the 34 waveform setting (WS0 to
+      WS33) and temperature range (TR0 to TR33).
+
+
+                                     D7    D6        D5   D4          D3   D2   D1   D0
+                             0
+                             …                                 WS0
+                             111
+                             112
+                             …                                 WS1
+                             223
+                             224
+                             …                                 WS2
+                             335
+                             336
+                             …                                 WS3
+                             447
+
+
+                                                                …
+
+
+                            3584
+                             …                                 WS32
+                            3695
+                            3696
+                             …                                 WS33
+                            3807
+                            3808
+                            3809                               TR0
+                            3810
+                            3811
+                            3812                               TR1
+                            3813
+                            3814
+                            3815                               TR2
+                            3816
+                            3817
+                            3818                               TR3
+                            3819
+                            3820
+                            3821                               TR4
+                            3822
+
+
+                                                                …
+
+
+                            3904
+                            3905                               TR32
+                            3906
+                            3907
+                            3908                               TR33
+                            3909
+
+
+
+
+          Figure 6-7 : The Waveform setting mapping in OTP for waveform setting and temperature range
+
+
+
+
+SSD1677        Rev 1.0     P 20/47        Nov 2018                                         Solomon Systech
+      6.10.1    The Format for Temperature Range (TR)
+      The format of TR Lower limit and Upper limit as shown in Figure 6-8 which temp_L[11:0] is the lower limit
+      and temp_H[11:0] is the upper limit of the temperature range. There has 34sets of TR for waveform LUT
+      searching.
+
+                 D7         D6         D5           D4        D3        D2         D1         D0
+                                                     temp_L[7:0]
+                             temp_H[3:0]                                temp_L[11:8]
+                                                    temp_H[11:4]
+
+                              Figure 6-8 : Format of Temperature Range (TR) in OTP
+
+6.11 VCI Detection
+      The VCI detection function is used to detect the VCI level when it is lower than Vlow, threshold voltage set
+      by register.
+
+      In the SSD1677, there is a command to execute the VCI detection function. When the VCI detection
+      command is issued, the VCI detection will be executed. During the detection period, BUSY output is at
+      high level. BUSY output is at low level when the detection is completed. Then, user can issue the Status
+      Bit Read command to check the status bit for the result of VCI, which 0 is normal, 1 is VCI<Vlow.
+
+
+6.12 HV Ready Detection
+      The HV Ready detection function is used for checking if driving voltage is ready before driven the EPD
+      panel.
+
+      In the SSD1677, it has the flexibility to set the number of detection and the detection duration for each HV
+      ready detection operation. And, during the detection period, BUSY output is at high level until the operation
+      is completed. After BUSY become to low level, the detection result can be read from Status register.
+
+
+
+
+SSD1677         Rev 1.0     P 21/47      Nov 2018                                             Solomon Systech
+7       COMMAND TABLE
+        Table 7-1: Command Table
+Command Table
+R/W# D/C# Hex     D7   D6   D5     D4      D3   D2   D1     D0   Command              Description
+    0    0   01   0    0    0      0       0    0    0      1 Driver Output control   Gate setting
+    0    1        A7   A6   A5     A4      A3   A2   A1     A0                        A[9:0]= 2A7h [POR], 680 MUX
+                                                                                      MUX Gate lines setting as (A[9:0] + 1).
+    0    1        0    0    0      0       0    0    A9     A8
+    0    1        0    0    0      0       0    B2   B1     B0                        B[2:0] = 000 [POR].
+                                                                                      Gate scanning sequence and direction
+
+                                                                                      B[2]: GD
+                                                                                      Selects the 1st output Gate
+                                                                                      GD=0 [POR],
+                                                                                      G0 is the 1st gate output channel, gate
+                                                                                      output sequence is G0,G1, G2, G3, …
+                                                                                      GD=1,
+                                                                                      G1 is the 1st gate output channel, gate
+                                                                                      output sequence is G1, G0, G3, G2, …
+
+                                                                                      B[1]: SM
+                                                                                      Change scanning order of gate driver.
+                                                                                      SM=0 [POR],
+                                                                                      G0, G1, G2, G3…679 (left and right gate
+                                                                                      interlaced)
+                                                                                      SM=1,
+                                                                                      G0, G2, G4 …G678, G1, G3, …G679
+
+                                                                                      B[0]: TB
+                                                                                      TB = 0, Scan from G0 to G679
+                                                                                      TB = 1, Reserved
+
+
+    0    0   03   0    0    0      0       0    0    1      1 Gate Driving voltage    Set Gate driving voltage
+    0    1        0    0    0      A4      A3   A2   A1     A0 Control                A[4:0] = 00h [POR]
+                                                                                      VGH setting from 12V to 20V
+                                                                                        A[4:0]    VGH       A[4:0]    VGH
+                                                                                         00h       20        10h      16.5
+                                                                                         07h       12        11h       17
+                                                                                         08h      12.5       12h      17.5
+                                                                                         09h       13        13h       18
+                                                                                         0Ah      13.5       14h      18.5
+                                                                                         0Bh       14        15h       19
+                                                                                         0Ch      14.5       16h      19.5
+                                                                                         0Dh       15        17h       20
+                                                                                         0Eh      15.5      Other      NA
+                                                                                         0Fh       16
+
+
+
+
+SSD1677           Rev 1.0        P 22/47         Nov 2018                                           Solomon Systech
+Command Table
+R/W# D/C# Hex     D7      D6      D5     D4         D3   D2     D1      Command
+                                                                         D0                  Description
+  0    0 04 0       0     0   0    0                     1     0    0 Source Driving voltage Set Source driving voltage
+  0    1      A7 A6 A5 A4 A3                             A2 A1 A0 Control                    A[7:0] = 41h [POR], VSH1 at 15V
+                                                                                             B[7:0] = A8h [POR], VSH2 at 5V.
+  0    1      B7 B6 B5 B4 B3                             B2 B1 B0                            C[7:0] = 32h [POR], VSL at -15V
+  0    1      C7 C6 C5 C4 C3                             C2 C1 C0
+ B[7] = 1,                                                A[7]/B[7] = 0,                        C[7] = 0,
+ VSH2 voltage setting from 2.4V to                        VSH1/VSH2 voltage setting from 9V     VSL setting from -9V to -17V
+ 8.8V                                                     to 17V
+   A/B[7:0]   VSH1/VSH2    A/B[7:0]      VSH1/VSH2            A/B[7:0]    VSH1/VSH2   A/B[7:0]   VSH1/VSH2            C[7:0]   VSL
+     8Eh         2.4           AFh            5.7               23h            9        3Ch         14                 1Ah      -9
+     8Fh         2.5           B0h            5.8               24h           9.2       3Dh        14.2                1Ch     -9.5
+     90h         2.6           B1h            5.9               25h           9.4       3Eh        14.4                1Eh      -10
+     91h         2.7           B2h            6                 26h           9.6       3Fh        14.6                20h     -10.5
+     92h         2.8           B3h            6.1               27h           9.8       40h        14.8
+                                                                                                                       22h      -11
+     93h         2.9           B4h            6.2               28h           10        41h         15
+                                                                                                                       24h     -11.5
+     94h         3             B5h            6.3               29h           10.2      42h        15.2
+                                                                                                                       26h      -12
+     95h         3.1           B6h            6.4               2Ah           10.4      43h        15.4
+                                                                                                                       28h     -12.5
+     96h         3.2           B7h            6.5               2Bh           10.6      44h        15.6
+                                                                                                                       2Ah      -13
+     97h         3.3           B8h            6.6               2Ch           10.8      45h        15.8
+                                                                                                                       2Ch     -13.5
+     98h         3.4           B9h            6.7               2Dh           11        46h         16
+     99h         3.5           BAh            6.8               2Eh           11.2      47h        16.2                2Eh      -14
+     9Ah         3.6           BBh            6.9               2Fh           11.4      48h        16.4                30h     -14.5
+     9Bh         3.7           BCh            7                 30h           11.6      49h        16.6                32h      -15
+     9Ch         3.8           BDh            7.1               31h           11.8      4Ah        16.8                34h     -15.5
+     9Dh         3.9           BEh            7.2               32h           12        4Bh         17                 36h      -16
+     9Eh         4             BFh            7.3               33h           12.2     Other        NA                 38h     -16.5
+     9Fh         4.1           C0h            7.4               34h           12.4                                     3Ah      -17
+     A0h         4.2           C1h            7.5               35h           12.6                                    Other     NA
+     A1h         4.3           C2h            7.6               36h           12.8
+     A2h         4.4           C3h            7.7               37h           13
+     A3h         4.5           C4h            7.8               38h           13.2
+     A4h         4.6           C5h            7.9               39h           13.4
+     A5h         4.7           C6h            8                 3Ah           13.6
+     A6h         4.8           C7h            8.1               3Bh           13.8
+     A7h         4.9           C8h            8.2
+     A8h         5             C9h            8.3
+     A9h         5.1           CAh            8.4
+    AAh          5.2           CBh            8.5
+    ABh          5.3           CCh            8.6
+    ACh          5.4           CDh            8.7
+    ADh          5.5           CEh            8.8                                                            Remark:
+    AEh          5.6           Other          NA                                                             VSH1> VSH2
+
+
+
+
+SSD1677              Rev 1.0           P 23/47           Nov 2018                                                   Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1     D0Command                     Description
+  0   0   08    0    0    0       0      1    0    0      0 Initial Code Setting        Program Initial Code Setting
+                                                            OTP Program
+                                                                                        The command required CLKEN=1.
+                                                                                        Refer to Register 0x22 for detail.
+                                                                                        BUSY pad will output high during
+                                                                                        operation.
+
+  0   0   09    0    0    0      0       1    0    0      1 Write Register for Initial Write Register for Initial Code Setting
+  0   1         A7   A6   A5     A4      A3   A2   A1     A0 Code Setting              Selection
+                                                                                       A[7:0] ~ D[7:0]: Reserved
+  0   1         B7   B6   B5     B4      B3   B2   B1     B0                           Details refer to Application Notes of Initial
+  0   1         C7   C6   C5     C4      C3   C2   C1     C0                           Code Setting
+  0   1         D7   D6   D5     D4      D3   D2   D1     D0
+
+  0   0   0A    0    0    0       0      1    0    1      0 Read Register for Initial Read Register for Initial Code Setting
+                                                            Code Setting
+
+
+  0   0   0C    0    0    0      0       1    1    0      0 Booster Soft-start          This command is used to control the
+  0   1         A7   A6   A5     A4      A3   A2   A1     A0 Control                    inrush current for the booster.
+  0   1         B7   B6   B5     B4      B3   B2   B1     B0
+                                                                                        Two level of strengths can be selected for
+  0   1         C7   C6   C5     C4      C3   C2   C1     C0                            the booster
+  0   1         D7   D6   D5     D4      D3   D2   D1     D0
+                E7   E6   E5     E4      E3   E2   E1     E0                                                    Data bytes
+                                                                                                  A[7:0] B[7:0] C[7:0] D[7:0] E[7:0]
+                                                                                        Level 1    AE      C7     C3      C0   40
+                                                                                        Level 2    AE      C7     C3      C0   80
+
+
+  0   0   10    0    0    0       1      0    0    0      0 Deep Sleep mode             Deep Sleep mode Control:
+  0   1         0    0    0       0      0    0    A1     A0                             A[1:0] : Description
+                                                                                         00       Normal Mode [POR]
+                                                                                         11       Enter Deep Sleep Mode
+                                                                                        After this command initiated, the chip will
+                                                                                        enter Deep Sleep Mode, BUSY pad will
+                                                                                        keep output high.
+                                                                                        Remark:
+                                                                                        To Exit Deep Sleep mode, User required
+                                                                                        to send HWRESET to the driver
+
+
+
+
+SSD1677         Rev 1.0        P 24/47         Nov 2018                                                 Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1    D0 Command             Description
+  0   0   11    0    0    0       1      0    0    0     1 Data Entry mode      Define data entry sequence
+  0   1         0    0    0       0      0    A2   A1    A0 setting             A[2:0] = 011 [POR]
+
+                                                                                A [1:0] = ID[1:0]
+                                                                                Address automatic increment / decrement
+                                                                                setting
+                                                                                The setting of incrementing or
+                                                                                decrementing of the address counter can
+                                                                                be made independently in each upper and
+                                                                                lower bit of the address.
+                                                                                00 –Y decrement, X decrement,
+                                                                                01 –Y decrement, X increment,
+                                                                                10 –Y increment, X decrement,
+                                                                                11 –Y increment, X increment [POR]
+
+                                                                                A[2] = AM
+                                                                                Set the direction in which the address
+                                                                                counter is updated automatically after data
+                                                                                are written to the RAM.
+                                                                                AM= 0, the address counter is updated in
+                                                                                the X direction. [POR]
+                                                                                AM = 1, the address counter is updated in
+                                                                                the Y direction.
+
+
+  0   0   12    0    0    0       1      0    0    1     0 SW RESET             It resets the commands and parameters to
+                                                                                their S/W Reset default values except
+                                                                                R10h-Deep Sleep Mode
+
+                                                                                During operation, BUSY pad will output
+                                                                                high.
+
+                                                                                Note: RAM are unaffected by this
+                                                                                command.
+
+
+  0   0   14    0    0    0       1      0    1    0     0 HV Ready Detection   HV ready detection
+                                                                                A[6:0] = 00h [POR]
+                                                                                The command required CLKEN=1 and
+                                                                                ANALOGEN=1.
+                                                                                Refer to Register 0x22 for detail.
+                                                                                After this command initiated, HV Ready
+                                                                                detection starts.
+                                                                                BUSY pad will output high during
+                                                                                detection.
+                                                                                The detection result can be read from the
+                                                                                Status Bit Read (Command 0x2F).
+  0   1         0    A6   A5     A4      0    A2   A1    A0                     A[6:4]=n for cool down duration:
+                                                                                10ms x (n+1)
+                                                                                A[2:0]=m for number of Cool Down Loop
+                                                                                to detect.
+                                                                                The max HV ready duration is
+                                                                                10ms x (n+1) x (m)
+                                                                                HV ready detection will be trigger after
+                                                                                each cool down time. The detection will be
+                                                                                completed when HV is ready.
+                                                                                For 1 shot HV ready detection, A[7:0] can
+                                                                                be set as 00h.
+
+
+
+
+SSD1677         Rev 1.0        P 25/47        Nov 2018                                       Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6    D5     D4      D3   D2   D1     D0 Command                 Description
+  0   0   15    0     0    0       1      0    1    0      1 VCI Detection            VCI Detection
+  0   1         0     0    0       0      0    A2   A1     A0                         A[2:0] = 100 [POR] , Detect level at 2.3V
+                                                                                      A[2:0] : VCI level Detect
+                                                                                                A[2:0]       VCI level
+                                                                                                011          2.2V
+                                                                                                100          2.3V
+                                                                                                101          2.4V
+                                                                                                110          2.5V
+                                                                                                111          2.6V
+                                                                                                Other        NA
+
+                                                                                      The command required CLKEN=1 and
+                                                                                      ANALOGEN=1
+                                                                                      Refer to Register 0x22 for detail.
+
+                                                                                      After this command initiated, VCI
+                                                                                      detection starts.
+                                                                                      BUSY pad will output high during
+                                                                                      detection.
+                                                                                      The detection result can be read from the
+                                                                                      Status Bit Read (Command 0x2F).
+
+  0   0   18    0    0     0      1       1    0    0      0 Temperature Sensor       Temperature Sensor Selection
+  0   1         A7   A6    A5     A4      A3   A2   A1     A0 Control                 A[7:0] = 48h [POR], external temperatrure
+                                                                                      sensor
+                                                                                      A[7:0] = 80h Internal temperature sensor
+
+
+
+  0   0   1A     0   0     0      1       1    0    1      0 Temperature Sensor       Write to temperature register.
+  0   1         A11 A10    A9     A8      A7   A6   A5     A4 Control (Write to       A[11:0] = 7FFh [POR]
+                                                              temperature register)
+  0   1         A3 A2      A1     A0      0    0    0      0
+
+  0   0   1B     0   0     0      1       1    0    1      1 Temperature Sensor       Read from temperature register.
+  1   1         A11 A10    A9     A8      A7   A6   A5     A4 Control (Read from
+                                                              temperature register)
+  1   1         A3 A2      A1     A0      0    0    0      0
+
+
+
+
+SSD1677          Rev 1.0        P 26/47         Nov 2018                                           Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1    D0 Command               Description
+  0   0   1C    0    0    0      1       1    1    0     0 Temperature Sensor     Write Command to External temperature
+  0   1         A7   A6   A5     A4      A3   A2   A1    A0 Control (Write        sensor.
+                                                            Command to External   A[7:0] = 00h [POR],
+  0   1         B7   B6   B5     B4      B3   B2   B1    B0 temperature sensor)   B[7:0] = 00h [POR],
+  0   1         C7   C6   C5     C4      C3   C2   C1    C0                       C[7:0] = 00h [POR],
+
+                                                                                  A[7:6]
+                                                                                    A[7:6]   Select no of byte to be sent
+                                                                                     00      Address + pointer
+                                                                                     01      Address + pointer + 1st parameter
+                                                                                             Address + pointer + 1st parameter +
+                                                                                     10
+                                                                                             2nd pointer
+                                                                                     11      Address
+                                                                                  A[5:0] – Pointer Setting
+                                                                                  B[7:0] – 1st parameter
+                                                                                  C[7:0] – 2nd parameter
+                                                                                  The command required CLKEN=1.
+                                                                                  Refer to Register 0x22 for detail.
+
+                                                                                  After this command initiated, Write
+                                                                                  Command to external temperature sensor
+                                                                                  starts. BUSY pad will output high during
+                                                                                  operation.
+
+  0   0   20    0    0    1       0      0    0    0     0 Master Activation      Activate Display Update Sequence
+
+                                                                                  The Display Update Sequence Option is
+                                                                                  located at R22h.
+
+                                                                                  BUSY pad will output high during
+                                                                                  operation. User should not interrupt this
+                                                                                  operation to avoid corruption of panel
+                                                                                  images.
+
+
+  0   0   21    0    0    1      0       0    0    0     1 Display Update         RAM content option for Display Update
+  0   1         A7   A6   A5     A4      A3   A2   A1    A0 Control 1             A[7:0] = 00h [POR]
+
+                                                                                  A[7:4] Red RAM option
+                                                                                   0000        Normal
+                                                                                   0100        Bypass RAM content as 0
+                                                                                   1000        Inverse RAM content
+
+                                                                                  A[3:0] BW RAM option
+                                                                                   0000       Normal
+                                                                                   0100       Bypass RAM content as 0
+                                                                                   1000       Inverse RAM content
+
+
+
+
+SSD1677         Rev 1.0        P 27/47        Nov 2018                                            Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1     D0 Command         Description
+  0   0   22    0    0    1      0       0    0    1      0 Display Update   Display Update Sequence Option:
+  0   1         A7   A6   A5     A4      A3   A2   A1     A0 Control 2       Enable the stage for Master Activation
+                                                                             A[7:0]= FFh (POR)
+
+                                                                                                                     Parameter
+                                                                                       Operating sequence
+                                                                                                                      (in Hex)
+                                                                             Enable clock signal                         80
+                                                                             Disable clock signal                        01
+
+                                                                             Enable clock signal  Enable Analog        C0
+                                                                             Disable Analog  Disable clock signal      03
+
+                                                                             Enable clock signal
+                                                                              Load LUT with DISPLAY Mode 1             91
+                                                                              Disable clock signal
+                                                                             Enable clock signal
+                                                                              Load LUT with DISPLAY Mode 2             99
+                                                                              Disable clock signal
+
+                                                                             Enable clock signal
+                                                                              Load temperature value from I2C
+                                                                             Single Master Interface                    B1
+                                                                              Load LUT with DISPLAY Mode 1
+                                                                              Disable clock signal
+                                                                             Enable clock signal
+                                                                              Load temperature value from I2C
+                                                                             Single Master Interface                    B9
+                                                                              Load LUT with DISPLAY Mode 2
+                                                                              Disable clock signal
+
+                                                                             Enable clock signal
+                                                                              Enable Analog
+                                                                              Display with DISPLAY Mode 1              C7
+                                                                              Disable Analog
+                                                                              Disable OSC
+                                                                             Enable clock signal
+                                                                              Enable Analog
+                                                                              Display with DISPLAY Mode 2              CF
+                                                                              Disable Analog
+                                                                             Disable OSC
+
+                                                                             Enable clock signal
+                                                                             Enable Analog
+                                                                              Load temperature value from I2C
+                                                                             Single Master Interface
+                                                                              Load temperature value from I2C          F7
+                                                                             Single Master Interface
+                                                                              DISPLAY with DISPLAY Mode 1
+                                                                              Disable Analog
+                                                                              Disable OSC
+                                                                             Enable clock signal
+                                                                             Enable Analog
+                                                                              Load temperature value from I2C
+                                                                             Single Master Interface
+                                                                              Load temperature value from I2C          FF
+                                                                             Single Master Interface
+                                                                              DISPLAY with DISPLAY Mode 2
+                                                                              Disable Analog
+                                                                              Disable OSC
+
+
+
+
+SSD1677         Rev 1.0        P 28/47         Nov 2018                                       Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1    D0Command                 Description
+  0   0   24    0    0    1       0      0    1    0     0 Write RAM (Black        After this command, data entries will be
+                                                           White) / RAM 0x24       written into the BW RAM until another
+                                                                                   command is written. Address pointers will
+                                                                                   advance accordingly
+
+                                                                                   For White pixel:
+                                                                                    Content of Write RAM(BW) = 1
+                                                                                   For Black pixel:
+                                                                                    Content of Write RAM(BW) = 0
+
+  0   0   25    0    0    1       0      0    1    0     1 Write RAM (Dithering)   After this command, data entries will be
+                                                                                   written into the dithering engine.
+
+  0   0   26    0    0    1       0      0    1    1     0 Write RAM (RED)         After this command, data entries will be
+                                                           / RAM 0x26              written into the RED RAM until another
+                                                                                   command is written. Address pointers will
+                                                                                   advance accordingly.
+
+                                                                                   For Red pixel:
+                                                                                    Content of Write RAM(RED) = 1
+                                                                                   For non-Red pixel [Black or White]:
+                                                                                    Content of Write RAM(RED) = 0
+
+  0   0   27    0    0    1       0      0    1    1     1 Read RAM                After this command, data read on the
+                                                                                   MCU bus will fetch data from RAM
+                                                                                   [According to parameter of Register 41h to
+                                                                                   select reading RAM(BW) / RAM(RED)],
+                                                                                   until another command is written. Address
+                                                                                   pointers will advance accordingly.
+
+                                                                                   The 1st byte of data read is dummy data.
+
+  0   0   28    0    0    1       0      1    0    0     0 VCOM Sense              Enter VCOM sensing conditions and hold
+                                                                                   for duration defined in 29h before reading
+                                                                                   VCOM value.
+                                                                                   The sensed VCOM voltage is stored in
+                                                                                   register
+                                                                                   The command required CLKEN=1 and
+                                                                                   ANALOGEN=1
+                                                                                   Refer to Register 0x22 for detail.
+
+                                                                                   BUSY pad will output high during
+                                                                                   operation.
+
+  0   0   29    0    0    1       0      1    0    0     1 VCOM Sense Duration Stabling time between entering VCOM
+  0   1         0    A6   0       0      A3   A2   A1    A0                    sensing mode and reading acquired.
+
+                                                                                   A[6]=1, Normal Mode
+                                                                                   A[6]=0, Reserve
+
+                                                                                   A[3:0] = 09h, duration = 10s.
+                                                                                   VCOM sense duration = Setting + 1
+                                                                                   Seconds
+
+
+
+
+SSD1677         Rev 1.0        P 29/47        Nov 2018                                          Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1     D0Command                 Description
+  0   0   2A    0    0    1      0       1    0    1      0 Program VCOM OTP        Program VCOM register into OTP
+
+                                                                                    The command required CLKEN=1.
+                                                                                    Refer to Register 0x22 for detail.
+
+                                                                                    BUSY pad will output high during
+                                                                                    operation.
+
+  0   0   2B    0    0    1      0       1    0    1      1 Write Register for      This command is used to reduce glitch
+  0   1         0    0    0      0       0    1    0      0 VCOM Control            when ACVCOM toggle. Two data bytes
+                                                                                    D04h and D63h should be set for this
+  0   1         0    1    1      0       0    0    1      1                         command.
+
+  0   0   2C    0    0    1      0       1    1    0      0 Write VCOM register     Write VCOM register from MCU interface
+  0   1         A7   A6   A5     A4      A3   A2   A1     A0                        A[7:0] = 00h [POR]
+                                                                                     A[7:0] VCOM A[7:0] VCOM
+                                                                                      08h       -0.2    58h     -2.2
+                                                                                      0Ch       -0.3    5Ch     -2.3
+                                                                                      10h       -0.4    60h     -2.4
+                                                                                      14h       -0.5    64h     -2.5
+                                                                                      18h       -0.6    68h     -2.6
+                                                                                      1Ch       -0.7    6Ch     -2.7
+                                                                                      20h       -0.8    70h     -2.8
+                                                                                      24h       -0.9    74h     -2.9
+                                                                                      28h        -1     78h      -3
+                                                                                      2Ch       -1.1    7Ch     -3.1
+                                                                                      30h       -1.2    80h     -3.2
+                                                                                      34h       -1.3    84h     -3.2
+                                                                                      38h       -1.4    88h     -3.4
+                                                                                      3Ch       -1.5    8Ch     -3.5
+                                                                                      40h       -1.6    90h     -3.6
+                                                                                      44h       -1.7    94h     -3.7
+                                                                                      48h       -1.8    98h     -3.8
+                                                                                      4Ch       -1.9    9Ch     -3.9
+                                                                                      50h        -2     A0h      -4
+                                                                                      54h       -2.1   Others Reserved
+
+  0   0   2D    0    0  1        0       1    1    0      1 OTP Register Read for    Read Register for Display Option:
+  1   1         A7   A6 A5       A4      A3   A2   A1     A0 Display Option
+                                                                                     A[7:0]: VCOM OTP Selection
+  1   1         B7   B6 B5       B4      B3   B2   B1     B0                         (Command 0x37, Byte A)
+  1   1         C7   C6 C5       C4      C3   C2   C1     C0
+  1   1         D7   D6 D5       D4      D3   D2   D1     D0                         B[7:0]: VCOM Register
+  1   1         E7   E6 E5       E4      E3   E2   E1     E0                         (Command 0x2C)
+  1   1         F7   F6 F5       F4      F3   F2   F1     F0                         C[7:0]~G[7:0]: Display Mode
+  1   1         G7   G6 G5       G4      G3   G2   G1     G0                         (Command 0x37, Byte B to Byte F)
+  1   1         H7   H6 H5       H4      H3   H2   H1     H0                         [5 bytes]
+  1   1         I7   I6 I5       I4      I3   I2   I1     I0                         H[7:0]~K[7:0]: Waveform Version
+  1   1         J7   J6 J5       J4      J3   J2   J1     J0                         (Command 0x37, Byte G to Byte J)
+  1   1         K7   K6 K5       K4      K3   K2   K1     K0                         [4 bytes]
+
+
+
+
+SSD1677         Rev 1.0        P 30/47         Nov 2018                                         Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1    D0 Command             Description
+  0   0   2E    0    0  1        0       1    1    1     0 User ID Read          Read 10 Byte User ID stored in OTP:
+  1   1         A7   A6 A5       A4      A3   A2   A1    A0                      A[7:0]]~J[7:0]: UserID (R38, Byte A and
+                                                                                    Byte J) [10 bytes]
+  1   1         B7   B6 B5       B4      B3   B2   B1    B0
+  1   1         C7   C6 C5       C4      C3   C2   C1    C0
+  1   1         D7   D6 D5       D4      D3   D2   D1    D0
+  1   1         E7   E6 E5       E4      E3   E2   E1    E0
+  1   1         F7   F6 F5       F4      F3   F2   F1    F0
+  1   1         G7   G6 G5       G4      G3   G2   G1    G0
+  1   1         H7   H6 H5       H4      H3   H2   H1    H0
+  1   1         I7   I6 I5       I4      I3   I2   I1    I0
+  1   1         J7   J6 J5       J4      J3   J2   J1    J0
+
+  0   0   2F    0    0    1      0       1    1    1     1 Status Bit Read      Read IC status Bit [POR 0x01]
+  1   1         0    0    A5     A4      0    0    A1    A0                     A[5]: HV Ready Detection flag [POR=0]
+                                                                                0: Ready
+                                                                                1: Not Ready
+                                                                                A[4]: VCI Detection flag [POR=0]
+                                                                                0: Normal
+                                                                                1: VCI lower than the Detect level
+                                                                                A[3]: [POR=0]
+                                                                                A[2]: Busy flag [POR=0]
+                                                                                0: Normal
+                                                                                1: BUSY
+                                                                                A[1:0]: Chip ID [POR=01]
+                                                                                Remark:
+                                                                                A[5] and A[4] status are not valid after
+                                                                                RESET, they need to be initiated by
+                                                                                command 0x14 and command 0x15
+                                                                                respectively.
+
+  0   0   30    0    0    1       1      0    0    0     0 Program WS OTP       Program OTP of Waveform Setting
+                                                                                The contents should be written into RAM
+                                                                                before sending this command.
+
+                                                                                The command required CLKEN=1.
+                                                                                Refer to Register 0x22 for detail.
+                                                                                BUSY pad will output high during
+                                                                                operation.
+
+
+  0   0   31    0    0    1       1      0    0    0     1 Load WS OTP          Load OTP of Waveform Setting
+
+                                                                                The command required CLKEN=1.
+                                                                                Refer to Register 0x22 for detail.
+
+                                                                                BUSY pad will output high during
+                                                                                operation.
+
+  0   0   32    0    0    1      1       0    0    1     0 Write LUT register   Write LUT register from MCU interface
+  0   1         A7   A6   A5     A4      A3   A2   A1    A0                     [105 bytes], which contains the content of
+                                                                                VS [nX-LUT], TP #[nX], RP#[n]).
+  0   1         B7   B6   B5     B4      B3   B2   B1    B0
+  0   1          :    :    :      :       :    :    :     :
+  0   1          .   ..    .      .       .    .    .     .
+
+
+
+
+SSD1677         Rev 1.0        P 31/47        Nov 2018                                       Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1     D0Command                  Description
+  0   0   34    0    0    1      1       0    1    0      0 CRC calculation          CRC calculation command
+
+                                                                                     BUSY pad will output high during
+                                                                                     operation.
+
+  0   0   35     0   0   1   1   0   1             0      1 CRC Status Read          CRC Status Read
+  1   1         A15 A14 A13 A12 A11 A10            A9     A8                         A[15:0] is the CRC read out value
+  1   1         A7 A6 A5 A4 A3 A2                  A1     A0
+
+  0   0   36    0    0    1      1       0    1    1      0 Program OTP selection Program OTP Selection according to the
+                                                                                  OTP Selection Control [R37h and R38h]
+
+                                                                                     The command required CLKEN=1.
+                                                                                     Refer to Register 0x22 for detail.
+                                                                                     BUSY pad will output high during
+                                                                                     operation.
+
+
+  0   0   37    0    0  1        1       0    1    1      1 Write Register for       Write Register for Display Option
+  0   1         0    0  0        0       0    0    0      0 Display Option
+                                                                                     B[7:0] Display Mode for WS[7:0]
+  0   1         B7   B6 B5       B4      B3   B2   B1     B0                         C[7:0] Display Mode for WS[15:8]
+  0   1         C7   C6 C5       C4      C3   C2   C1     C0                         D[7:0] Display Mode for WS[23:16]
+  0   1         D7   D6 D5       D4      D3   D2   D1     D0                         E[7:0] Display Mode for WS[31:24]
+                                                                                     F[3:0] Display Mode for WS[35:32]
+  0   1         E7   E6 E5       E4      E3   E2   E1     E0
+                                                                                     0: Display Mode 1
+  0   1         0    F6 0        0       F3   F2   F1     F0                         1: Display Mode 2
+  0   1         G7   G6 G5       G4      G3   G2   G1     G0
+  0   1         H7   H6 H5       H4      H3   H2   H1     H0                         F[6]: RAM Ping-Pong for Display Mode 2
+                                                                                     1: RAM ping-pong enable
+  0   1         I7   I6 I5       I4      I3   I2   I1     I0                         0: RAM ping-pong disable
+  0   1         J7   J6 J5       J4      J3   J2   J1     J0
+                                                                                     G[7:0]~J[7:0] module ID /waveform
+                                                                                     version.
+
+                                                                                     Remarks:
+                                                                                     1) A[7:0]~J[7:0] can be stored in OTP
+                                                                                     2) RAM ping-pong function is not support
+                                                                                     for Display Mode 1
+
+
+  0   0   38    0    0  1        1       1    0    0      0 Write Register for User Write Register for User ID
+  0   1         A7   A6 A5       A4      A3   A2   A1     A0 ID                      A[7:0]]~J[7:0]: UserID [10 bytes]
+  0   1         B7   B6 B5       B4      B3   B2   B1     B0                        Remarks: A[7:0]~J[7:0] can be stored in
+  0   1         C7   C6 C5       C4      C3   C2   C1     C0                        OTP
+  0   1         D7   D6 D5       D4      D3   D2   D1     D0
+  0   1         E7   E6 E5       E4      E3   E2   E1     E0
+  0   1         F7   F6 F5       F4      F3   F2   F1     F0
+  0   1         G7   G6 G5       G4      G3   G2   G1     G0
+  0   1         H7   H6 H5       H4      H3   H2   H1     H0
+  0   1         I7   I6 I5       I4      I3   I2   I1     I0
+  0   1         J7   J6 J5       J4      J3   J2   J1     J0
+
+
+
+
+SSD1677         Rev 1.0        P 32/47         Nov 2018                                           Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1    D0 Command           Description
+  0   0   39    0    0    1       1      1    0    0     1 OTP program mode   OTP program mode
+  0   1         0    0    0       0      0    0    A1    A0                   A[1:0] = 00: Normal Mode [POR]
+                                                                              A[1:0] = 11: Internal generated OTP
+                                                                              programming voltage
+
+                                                                              Remark: User is required to EXACTLY
+                                                                              follow the reference code sequences
+
+  0   0   3A    0    0    1       1      1    0    1     0 Reserved           Reserved
+
+  0   0   3B    0    0    1       1      1    0    1     1 Reserved           Reserved
+
+  0   0   3C    0    0    1      1       1    1    0     0 Border Waveform    Select border waveform for VBD
+  0   1         A7   A6   A5     A4      0    0    A1    A0 Control           A[7:0] = C0h [POR], set VBD as HIZ.
+
+                                                                              A [7:6] :Select VBD option
+                                                                                  A[7:6]        Select VBD as
+                                                                                    00          GS Transition,
+                                                                                               Defined in A[1:0]
+                                                                                    01             Fix Level,
+                                                                                               Defined in A[5:4]
+                                                                                    10              VCOM
+                                                                                11[POR]               HiZ
+
+                                                                              A [5:4] Fix Level Setting for VBD
+                                                                                  A[5:4]            VBD level
+                                                                                00[POR]                VSS
+                                                                                    01                VSH1
+                                                                                    10                 VSL
+                                                                                    11                VSH2
+
+                                                                              A [1:0] GS Transition setting for VBD
+                                                                                  A[1:0]         VBD Transition
+                                                                                00[POR]              LUT0
+                                                                                    01               LUT1
+                                                                                    10               LUT2
+                                                                                    11               LUT3
+
+  0   0   41    0    1    0       0      0    0    0     1 Read RAM Option    Read RAM Option
+  0   1         0    0    0       0      0    0    0     A0                   A[0]= 0 [POR]
+                                                                              0: Read RAM corresponding to RAM 0x24
+                                                                              1: Read RAM corresponding to RAM 0x26
+
+
+
+
+SSD1677         Rev 1.0        P 33/47        Nov 2018                                     Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2     D1      D0 Command                Description
+  0   0   44    0    1    0      0       0    1      0       0 Set RAM X - address     Specify the start/end positions of the
+  0   1         A7   A8   A5     A4      A3   A2     A1      A0 Start / End position   window address in the X direction by an
+                                                                                       address unit for RAM
+  0   1          -   -     -      -       -    -     A9      A8
+  0   1         0    0    B5     B4      B3   B2     B1      B0                        A[9:0]: XSA[9:0], XStart, POR = 000h
+  0   1         -    -    -       -      -    -      B9      B8                        B[9:0]: XEA[9:0], XEnd, POR = 3BFh
+
+
+  0   0   45    0    1    0      0       0    1      0       1 Set RAM Y- address      Specify the start/end positions of the
+  0   1         A7   A6   A5     A4      A3   A2     A1      A0 Start / End position   window address in the Y direction by an
+                                                                                       address unit for RAM
+  0   1          -   -     -      -       -    -     A9      A8
+  0   1         B7   B6   B5     B4      B3   B2     B1      B0                        A[9:0]: YSA[9:0], YStart, POR = 000h
+  0   1          -   -     -      -       -    -     B9      B8                        B[9:0]: YEA[9:0], YEnd, POR = 2A7h
+
+  0   0   46    0    1    0      0       0    1      1       0 Auto Write RED RAM      Auto Write RED RAM for Regular Pattern
+  0   1         A7   A6   A5     A4      0    A2     A1      A0 for Regular Pattern    A[7:0] = 00h [POR]
+
+                                                                                       A[7]: The 1st step value, POR = 0
+                                                                                       A[6:4]: Step Height, POR= 000
+                                                                                       Step of alter RAM in Y-direction according
+                                                                                       to Gate
+                                                                                         A[6:4]    Height    A[6:4]    Height
+                                                                                          000         8       100       128
+                                                                                          001        16       101       256
+                                                                                          010        32       110       512
+                                                                                          011        64       111       680
+
+                                                                                       A[2:0]: Step Width, POR= 000
+                                                                                       Step of alter RAM in X-direction according
+                                                                                       to Source
+                                                                                         A[2:0]     Width    A[2:0]    Width
+                                                                                          000         8       100       128
+                                                                                          001        16       101       256
+                                                                                          010        32       110       512
+                                                                                          011        64       111       960
+
+                                                                                       BUSY pad will output high during
+                                                                                       operation.
+
+
+
+
+SSD1677         Rev 1.0        P 34/47            Nov 2018                                          Solomon Systech
+Command Table
+R/W# D/C# Hex   D7   D6   D5     D4      D3   D2   D1    D0 Command              Description
+  0   0   47    0    1    0      0       0    1    1     1 Auto Write B/W RAM for Auto Write B/W RAM for Regular Pattern
+  0   1         A7   A6   A5     A4      0    A2   A1    A0 Regular Pattern       A[7:0] = 00h [POR]
+
+                                                                                   A[7]: The 1st step value, POR = 0
+                                                                                   A[6:4]: Step Hieght, POR= 000
+                                                                                   Step of alter RAM in Y-direction according
+                                                                                   to Gate
+                                                                                     A[6:4]    Height    A[6:4]    Height
+                                                                                      000         8       100       128
+                                                                                      001        16       101       256
+                                                                                      010        32       110       512
+                                                                                      011        64       111       680
+
+                                                                                   A[2:0]: Step Width, POR= 000
+                                                                                   Step of alter RAM in X-direction according
+                                                                                   to Source
+                                                                                     A[2:0]     Width    A[2:0]    Width
+                                                                                      000         8       100       128
+                                                                                      001        16       101       256
+                                                                                      010        32       110       512
+                                                                                      011        64       111       960
+
+                                                                                   During operation, BUSY pad will output
+                                                                                   high.
+
+  0   0   4D    0    1    0      0       1    1    0     1 Dithering engine        This command is used for start and stop
+  0   1         A7   A6   A5     A4      A3   A2   A1    A0 Start/Stop             dithering function, start commands should
+                                                                                   be sent before Command 0x25 and stop
+  0   1         B7   B6   B5     B4      B3   B2   B1    B0
+                                                                                   commands should be sent after the data
+  0   1         C7   C6   C5     C4      C3   C2   C1    C0                        bytes of command 0x25
+  0   1         D7   D6   D5     D4      D3   D2   D1    D0
+                                                                                                            Data byte
+                                                                                                  A[7:0] B[7:0]   C[7:0]   D[7:0]
+                                                                                   Start Sierra
+                                                                                                   80      00        78     00
+                                                                                   Lite
+                                                                                   Start Floyd-
+                                                                                                   83      00        78     00
+                                                                                   Steinberg
+                                                                                   Stop
+                                                                                                   00      00        78     00
+                                                                                   dithering
+
+  0   0   4E    0    1    0      0       1    1    1     0 Set RAM X address       Make initial settings for the RAM X
+  0   1         A7   A6   A5     A4      A3   A2   A1    A0 counter                address in the address counter (AC)
+                                                                                   A[9:0]: 000h [POR].
+  0   1         0    0    0      0       0    0    A9    A8
+
+  0   0   4F    0    1    0      0       1    1    1     1 Set RAM Y address       Make initial settings for the RAM Y
+  0   1         A7   A6   A5     A4      A3   A2   A1    A0 counter                address in the address counter (AC)
+                                                                                   A[9:0]: 000h [POR].
+  0   1         0    0    0      0       0    0    A9    A8
+
+  0   0   7F    0    1    1       1      1    1    1     1 NOP                     This command is an empty command; it
+                                                                                   does not have any effect on the display
+                                                                                   module.
+                                                                                   However, it can be used to terminate
+                                                                                   Frame Memory Write or Read
+                                                                                   Commands.
+
+
+
+
+SSD1677         Rev 1.0        P 35/47        Nov 2018                                             Solomon Systech
+8     COMMAND DESCRIPTION
+
+
+8.1   Driver Output Control (01h)
+
+      This triple byte command has multiple configurations and each bit setting is described as follows:
+
+                           Table 8-1 : POR settings for Driver Output Control (Command 0x01)
+                            R/W DC D7    D6   D5   D4   D3   D2   D1   D0
+                             W   1 MUX7 MUX6 MUX5 MUX4 MUX3 MUX2 MUX1 MUX0
+                              POR   1     0    1    0    0    1    1    1
+                             W   1                               MUX9 MUX8
+                              POR                                  1    0
+                             W   1                           GD   SM   TB
+                              POR                             0    0    0
+
+
+      MUX[9:0]: Specify number of lines for the driver: MUX[9:0] + 1. Multiplex ratio (MUX ratio) from 300 MUX
+                to 680MUX.
+
+      TB: This bit is set at “0” for scanning from gate 0. Option TB = 1 is reserved.
+
+      SM: Change scanning order of gate driver.
+          When SM is set to 0, left and right interlaced is performed.
+          When SM is set to 1, no splitting odd / even of the GATE signal is performed,
+          Output pin assignment sequence is shown as below (for 680 MUX ratio):
+
+      GD: Selects the 1st output Gate
+          This bit is made to match the GATE layout connection on the panel. It defines the first scanning line.
+
+      Table 8-2 and Figure 8-1 illustrate in details about GD and SM.
+
+                           Table 8-2 : Output pin assignment sequence of SM and GD settings
+                                        SM=0           SM=0         SM=1           SM=1
+                          Driver        GD=0           GD=1         GD=0           GD=1
+                           G0           ROW0           ROW1         ROW0          ROW340
+                           G1           ROW1           ROW0        ROW340          ROW0
+                           G2           ROW2           ROW3         ROW1          ROW341
+                           G3           ROW3           ROW2        ROW341          ROW1
+                             :            :              :            :              :
+                          G338         ROW338         ROW339       ROW170         ROW510
+                          G339         ROW339         ROW338       ROW510         ROW170
+                          G340         ROW340         ROW341       ROW171         ROW511
+                          G341         ROW341         ROW340       ROW511         ROW171
+                             :            :              :            :              :
+                          G676         ROW676         ROW677       ROW338         ROW678
+                          G677         ROW677         ROW676       ROW678         ROW338
+                          G678         ROW678         ROW679       ROW339         ROW679
+                          G679         ROW679         ROW678       ROW679         ROW339
+
+
+
+
+SSD1677         Rev 1.0      P 36/47       Nov 2018                                            Solomon Systech
+                    Figure 8-1: Output pin assignment on different setting of GD and SM
+                             SM = 0                                             SM = 1
+ GD = 0
+
+
+
+
+ GD = 1
+
+
+
+
+SSD1677   Rev 1.0      P 37/47     Nov 2018                                       Solomon Systech
+8.2   Data Entry Mode Setting (11h)
+      This command has multiple configurations and each bit setting is described as follows:
+
+
+                          Table 8-3 : POR settings for Data Entry Mode Setting (Command 0x11)
+                                    R/W   DC        IB7      IB6     IB5    IB4       IB3    IB2    IB1     IB0
+                                     W     1                                                 AM     ID1     ID0
+                                       POR          0        0        0         0      0      0      1       1
+
+
+      ID[1:0]: The address counter is automatically incremented by 1, after data is written to the RAM when
+      ID[1:0] = “01”. The address counter is automatically decremented by 1, after data is written to the RAM
+      when ID[1:0] = “00”. The setting of incrementing or decrementing of the address counter can be made
+      independently in each upper and lower bit of the address. The direction of the address when data is written
+      to the RAM is set by AM bits.
+
+      AM: Set the direction in which the address counter is updated automatically after data are written to the
+      RAM. When AM = “0”, the address counter is updated in the X direction. When AM = “1”, the address
+      counter is updated in the Y direction. When window addresses are selected, data are written to the RAM
+      area specified by the window addresses in the manner specified with ID[1:0] and AM bits.
+
+
+                       Table 8-4 : Address counter directions of ID and AM settings (Command 0x11)
+
+                          ID [1:0]="00”              ID [1:0]="01”                  ID [1:0]="10”            ID [1:0]="11”
+                          X: decrement               X: increment                   X: decrement             X: increment
+                          Y: decrement               Y: decrement                   Y: increment             Y: increment
+                           00,00h                    00,00h                         00,00h                   00,00h
+
+
+              AM="0”
+              X-mode
+                                      3BFh, 2A7h                   3BFh, 2A7h                  3BFh, 2A7h             3BFh, 2A7h
+
+
+                           00,00h                    00,00h                         00,00h                   00,00h
+
+
+              AM="1”
+              Y-mode
+                                     3BFh, 2A7h                    3BFh, 2A7h                 3BFh, 2A7h                3BFh, 2A7h
+
+
+
+
+SSD1677         Rev 1.0       P 38/47             Nov 2018                                                            Solomon Systech
+8.3   Set RAM X - Address Start / End Position (44h)
+      This command is used to set the start/ end position of the window address in X-direction.
+
+
+                Table 8-5 : POR settings for Set RAM X - Address Start / End Position (Command 0x44)
+                             R/W DC     IB7  IB6  IB5  IB4  IB3  IB2  IB1  IB0
+                              W    1   XSA7 XSA6 XSA5 XSA4 XSA3 XSA2 XSA1 XSA0
+                               POR       0    0    0    0    0    0    0    0
+                              W    1      -   -    -    -    -    -  XSA9 XSA8
+                               POR        -   -    -    -    -    -    0    0
+                              W    1   XEA7 XEA6 XEA5 XEA4 XEA3 XEA2 XEA1 XEA0
+                               POR       1    0    1    1    1    1    1    1
+                              W    1      -   -    -    -    -    -  XEA9 XEA8
+                               POR        -   -    -    -    -    -    1    1
+
+
+      XSA[9:0]/XEA[9:0]: Specify the start/end positions of the window address in the X direction by an address
+      unit. Data is written to the RAM within the area determined by the addresses specified by XSA [9:0] and
+      XEA [9:0]. These addresses must be set before the RAM write.
+      It allows on XEA [9:0] ≤ XSA [9:0]. The settings follow the condition on 00h ≤ XSA [9:0], XEA [9:0] ≤ 3BFh.
+      The window is followed by the control setting of Data Entry Setting (R11h)
+
+
+
+8.4   Set RAM Y - Address Start / End Position (45h)
+      This command is used to set the start/ end position of the window address in Y-direction.
+
+                Table 8-6 : POR settings for Set RAM Y - Address Start / End Position (Command 0x45)
+                             R/W DC     IB7  IB6  IB5  IB4  IB3  IB2  IB1  IB0
+                              W    1   YSA7 YSA6 YSA5 YSA4 YSA3 YSA2 YSA1 YSA0
+                               POR       0    0    0    0    0    0    0    0
+                              W    1     0    0    0    0    0    0  YSA9 YSA8
+                               POR       0    0    0    0    0    0    0    0
+                              W    1   YEA7 YEA6 YEA5 YEA4 YEA3 YEA2 YEA1 YEA0
+                               POR       1    0    1    0    0    1    1    1
+                              W    1     0    0    0    0    0    0  YEA9 YEA8
+                               POR       0    0    0    0    0    0    1    0
+
+
+      YSA[9:0]/YEA[9:0]: Specify the start/end positions of the window address in the Y direction by an address
+      unit. Data is written to the RAM within the area determined by the addresses specified by YSA [9:0] and
+      YEA [9:0]. These addresses must be set before the RAM write.
+      It allows YEA [9:0] ≤ YSA [9:0]. The settings follow the condition on 00h ≤ YSA [9:0], YEA [9:0] ≤ 2A7h.
+      The window is followed by the control setting of Data Entry Setting (R11h)
+
+
+
+
+SSD1677         Rev 1.0     P 39/47     Nov 2018                                             Solomon Systech
+8.5   Set RAM Address Counter (4Eh-4Fh)
+      These commands are used to set the start position of RAM address counter.
+
+                 Table 8-7 : POR settings for Set RAM Address Counter (Command 0x4E~4F)
+                      Reg# R/W            DC   IB7   IB6   IB5   IB4   IB3   IB2   IB1   IB0
+                                 W        1    XAD7 XAD6 XAD5 XAD4 XAD3 XAD2 XAD1 XAD0
+                                   POR          0     0    0     0     0     0      0    0
+                          4Eh
+                                 W        1     -     -     -     -     -     -    XAD9 XAD8
+                                   POR          -     -     -     -     -     -     0    0
+                                 W        1    YAD7 YAD6 YAD5 YAD4 YAD3 YAD2 YAD1 YAD0
+                                   POR          0     0    0     0     0     0      0    0
+                          4Fh
+                                 W        1     -     -     -     -     -     -    YAD9 YAD8
+                                   POR          -     -     -     -     -     -     0    0
+
+
+
+
+      XAD[9:0]: Make initial settings for the RAM X address in the address counter (AC).
+      YAD[9:0]: Make initial settings for the RAM Y address in the address counter (AC).
+
+      After RAM data is written, the address counter is automatically updated according to the settings with AM,
+      ID bits and setting for a new RAM address is not required in the address counter. Therefore, data is written
+      consecutively without setting an address. The address counter is not automatically updated when data is
+      read out from the RAM. RAM address setting cannot be made during the standby mode. The address
+      setting should be made within the area designated with window addresses which is controlled by the Data
+      Entry Setting (R11h) {AM, ID[1:0]} ; RAM Address XStart / XEnd Position (R44h) and RAM Address Ystart
+      /Yend Position (R45h). Otherwise undesirable image will be displayed on the Panel.
+
+
+
+
+SSD1677         Rev 1.0         P 40/47         Nov 2018                                       Solomon Systech
+9 Operation Flow and Code Sequence
+9.1 General operation flow to drive display panel
+.
+
+
+                                                 START
+
+
+                                              1. Power On
+                                              • Supply VCI
+                                              • Wait 10ms
+
+
+                                   2. Set Initial Configuration
+                           • Define SPI interface to communicate with MCU
+                           • HW Reset
+                           • SW Reset by Command 0x12
+                           • Wait 10ms
+
+
+                                     3. Send Initialization Code
+                      • Clear and fill two RAM by Command 0x46, Data 0XF7 for
+                        RAM 0x24 and Command 0x47, Data 0xF7 for RAM 0x26
+                      • Set gate driver output by Command 0x01
+                      • Set display RAM size by Command 0x11, 0x44, 0x45
+                      • Set panel border by Command 0x3C
+
+
+
+                                        4. Load Waveform LUT
+                          • Sense temperature by int/ext TS by Command 0x18
+                          • Load waveform LUT from OTP by Command 0x22,
+                            0x20 or by MCU
+                          • Wait BUSY Low
+
+
+
+                                5. Write Image and Drive Display Panel
+                           • Write image data in RAM by Command 0x4E, 0x4F,
+                             0x24, 0x26
+                           • Set softstart setting by Command 0x0C
+                           • Drive display panel by Command 0x22, 0x20
+                           • Wait BUSY Low
+
+
+                                             6. Power Off
+                                     • Deep sleep by Command 0x10
+                                     • Power OFF
+
+
+
+                                                  END
+
+                          Figure 9-1: Operation flow to drive display panel
+
+
+
+
+SSD1677     Rev 1.0   P 41/47      Nov 2018                                     Solomon Systech
+10 Absolute Maximum Rating
+                                           Table 10-1 : Maximum Ratings
+                  Symbol        Parameter                                   Rating                     Unit
+                  VCI           Logic supply voltage                        -0.5 to +4.0                 V
+                  VIN           Logic Input voltage                         -0.5 to VDDIO+0.5            V
+                  VOUT          Logic Output voltage                        -0.5 to VDDIO+0.5            V
+                  TOPR          Operation temperature range                 -25 to 85                   °C
+                  TSTG          Storage temperature range                   -65 to +150                 °C
+
+Maximum ratings are those values beyond which damages to the device may occur. Functional operation should
+be restricted to the limits in the Electrical Characteristics tables or Pin Description section
+
+This device contains circuitry to protect the inputs against damage due to high static voltages or electric fields;
+however, it is advised that normal precautions be taken to avoid application of any voltage higher than maximum
+rated voltages to this high impedance circuit. For proper operation it is recommended that VCI be constrained to
+the range VSS < VCI. Reliability of operation is enhanced if unused input is connected to an appropriate logic
+voltage level (e.g., either VSS or VDDIO). Unused outputs must be left open. This device may be light sensitive.
+Caution should be taken to avoid exposure of this device to any light source during normal operation. This device
+is not radiation protected.
+
+11 Electrical Characteristics
+       The following specifications apply for: VSS=0V, VCI=3.0V, VDD=1.8V, TOPR=25ºC.
+                                           Table 11-1: DC Characteristics
+
+Symbol         Parameter                  Applicable pin       Test Condition           Min.       Typ.        Max.      Unit
+VCI            VCI operation voltage      VCI                                           2.2         3.0         3.3       V
+VDD            VDD operation voltage      VDD                                           1.7         1.8         1.9       V
+VCOM_DC        VCOM_DC output             VCOM                                          -4.0                   -0.1       V
+               voltage
+dVCOM_DC       VCOM_DC output             VCOM                                          -100                    100       mV
+               voltage deviation
+VCOM_AC        VCOM_AC output             VCOM                                         VSL + VCOM_DC VSH1+                V
+               voltage                                                                VCOM_DC        VCOM_DC
+VGATE          Gate output voltage        G0~G679                                       -20           +20                 V
+VGATE(p-p)     Gate output peak to        G0~G679                                                      40                 V
+               peak voltage
+VSH1R          Positive Source output     VSH1R                                          +9         +15         +17       V
+               voltage
+dVSH1R         VSH1R output voltage       VSH1R                                         -200                    200       mV
+               deviation
+VSH2R          Positive Source output     VSH2R                                         +2.4        +5          +17       V
+               voltage
+dVSH2R         VSH2R output voltage       VSH2R                2.4V to 8.8V             -100                    100       mV
+               deviation                                       8.8V to 17V              -200                    200       mV
+VSLR           Negative Source output     VSLR                                           -17        -15          -9       V
+               voltage
+dVSLR          VSLR output voltage        VSLR                                          -200                    200       mV
+               deviation
+VIH            High level input voltage   SDA, SCL, CS#,                              0.8VDDIO                            V
+                                          D/C#, RES#, BS1,
+VIL            Low level input voltage    M/S#, EXTVDD, CL                                                    0.2VDDIO    V
+
+VOH            High level output voltage SDA, BUSY, CL         IOH = -100uA           0.9VDDIO                            V
+VOL            Low level output voltage                        IOL = 100uA                                    0.1VDDIO    V
+
+
+
+SSD1677           Rev 1.0    P 42/47       Nov 2018                                              Solomon Systech
+Symbol      Parameter               Applicable pin        Test Condition          Min.      Typ.        Max.         Unit
+VPP         OTP Program voltage     VPP                                           7.25       7.5        7.75           V
+Islp_VCI    Sleep mode current      VCI                   - DC/DC off                        25          40           uA
+                                                          - No clock
+                                                          - No output load
+                                                          - MCU interface
+                                                          access
+                                                          - RAM data access
+
+Idslp_VCI   Deep sleep mode         VCI                   - DC/DC off                           1            5            uA
+            current                                       - No clock
+                                                          - No output load
+                                                          - No MCU interface
+                                                            access
+                                                          - Cannot retain RAM
+                                                            data
+Iopr_VCI    Operating Mode current VCI                    VCI=3.0V                          2.0                       mA
+VGH         Operating Mode         VGH                    Enable Clock and        19.5      20          20.5          V
+            Output Voltage                                Analog by Master
+                                                          Activation Command
+VSH1                                VSH1                                          14.8       15         15.2              V
+                                                          VGH=20V
+                                                          VGL=-VGH
+VSH2                                VSH2                  VSH1=15V                4.9           5           5.1           V
+                                                          VSH2=5V
+VSL                                 VSL                   VSL=-15V               -15.2      -15         -14.8             V
+                                                          VCOM = -2V
+VCOM                                VCOM                  No waveform             -2.2          -2          -1.8          V
+                                                          transitions.
+                                                          No loading.
+                                                          No RAM read/write
+                                                          No OTP read /write
+
+                                  Table 11-2: Regulators Characteristics
+
+  Symbol         Parameter            Test Condition        Applicable pin      Min.     Typ.        Max.          Unit
+    IVGH         VGH current            VGH = 20V               VGH                                  1000           uA
+    IVGL         VGL current           VGL = -VGH                VGL                                 1000           uA
+    IVSH        VSH1 current           VSH1 = +15V              VSH1                                 2000           uA
+   IVSH1        VSH2 current           VSH2 = +5V               VSH2                                 2000           uA
+     IVSL        VSL current            VSL = -15V               VSL                                 2000           uA
+  IVCOM         VCOM current           VCOM = -2V              VCOM                                  2000           uA
+
+
+
+
+SSD1677       Rev 1.0   P 43/47     Nov 2018                                              Solomon Systech
+12 AC Characteristics
+12.1 Serial Peripheral Interface
+
+      The following specifications apply for: VDDIO - VSS = 2.2V to 3.7V, T OPR = 25°C, CL=30pF
+      Table 12-1 : Serial Peripheral Interface Timing Characteristics
+Write mode
+Symbol      Parameter                                                                      Min     Typ     Max    Unit
+fSCL        SCL frequency (Write Mode)                                                                      20     MHz
+tCSSU       Time CS# has to be low before the first rising edge of SCLK                     20                      ns
+tCSHLD      Time CS# has to remain low after the last falling edge of SCLK                  20                      ns
+tCSHIGH     Time CS# has to remain high between two transfers                              100                      ns
+tSCLCYC     SCL cycle time                                                                  50                      ns
+tSCLHIGH    Part of the clock period where SCL has to remain high                           25                      ns
+tSCLLOW     Part of the clock period where SCL has to remain low                            25                      ns
+tSISU       Time SI (SDA Write Mode) has to be stable before the next rising edge of SCL    10                      ns
+tSIHLD      Time SI (SDA Write Mode) has to remain stable after the rising edge of SCL      40                      ns
+Read mode
+Symbol Parameter                                                                           Min     Typ     Max    Unit
+fSCL   SCL frequency (Read Mode)                                                                            2.5    MHz
+tCSSU    Time CS# has to be low before the first rising edge of SCLK                        100                    ns
+tCSHLD Time CS# has to remain low after the last falling edge of SCLK                        50                    ns
+tCSHIGH Time CS# has to remain high between two transfers                                   250                    ns
+tSCLHIGH Part of the clock period where SCL has to remain high                              180                    ns
+tSCLLOW Part of the clock period where SCL has to remain low                                180                    ns
+tSOSU    Time SO(SDA Read Mode) will be stable before the next rising edge of SCL                    50            ns
+tSOHLD Time SO (SDA Read Mode) will remain stable after the falling edge of SCL                      0             ns
+      Note: All timings are based on 20% to 80% of VDDIO-VSS
+                                               Figure 12-1: SPI timing diagram
+
+
+           CS#
+                                                       ttCKPER
+                                                         SCLCYC
+
+
+
+
+                                                                                                 tCSHIGH
+                                                  t SCLHIGH                       tCSHLD
+                        tCSSU                                 t SCLLOW
+
+            SCL
+
+
+                       tSISU
+                                     t SIHLD
+            SDA
+           (Write
+           Mode)
+                                     t SOSU                       tSOHLD
+            SDA
+           (Read
+           Mode)
+
+
+
+
+SSD1677             Rev 1.0     P 44/47        Nov 2018                                                Solomon Systech
+13 Application Circuit
+
+               Figure 13-1: Schematic of SSD1677 application circuit
+
+
+
+
+                           Table 13-1: Component list for SSD1677 application circuit
+              Part Name              Value                     Reference Part/ Requirement
+               C0-C1                 1uF            0603; X5R/X7R; Voltage Rating: 6V
+               C2-C7               4.7uF            0805; X5R/X7R; Voltage Rating: 25V
+                C8                   1uF            0805; X7R; Voltage Rating: 25V
+                R1                2.2 Ohm           0805; 1%
+               D1-D3               Diode            MBR0530
+                Q1                 NMOS             Si1304BDL
+                L1                  47uH            CDRH2D18/ LDNP-470NC
+                U1            0.5mm ZIF socket      24pins, 0.5mm pitch
+
+
+
+Remark: Component value is subjected to change and depends on panel loading.
+
+
+
+
+SSD1677        Rev 1.0     P 45/47      Nov 2018                                             Solomon Systech
+14 Package Information
+
+                      Figure 14-1 : SSD1677Z and SSD1677Z8 tray information
+
+
+
+
+                                                                              Symbol       Spec (mm)
+                                                                                W1         101.60±0.10
+                                                                                W2          91.55±0.10
+                                                                                W3          91.85±0.10
+                                                                                H           4.55±0.10
+                                                                                Dx          26.50±0.05
+                                                                               TPx          48.60±0.10
+                                                                                Dy          7.90±0.05
+                                                                               Tpy          85.80±0.10
+                                                                                Px          24.30±0.05
+                                                                                Py          3.30±0.05
+                                                                                 X          22.25±0.05
+                                                                                 Y          1.51±0.05
+                                                                                 Z          0.40±0.05
+                                                                                X1          22.25±0.05
+                                                                                Y1          1.51±0.05
+                                                                                Z1          0.35±0.05
+                                                                                N      81 (pocket number)
+
+
+
+
+SSD1677    Rev 1.0   P 46/47      Nov 2018                                        Solomon Systech
+Solomon Systech reserves the right to make changes without notice to any products herein. Solomon Syst ech makes no warranty,
+representation or guarantee regarding the suitability of its products for any particular purpose, nor does Solomon Systech as sume any
+liability arising out of the application or use of any product or circuit, and specifically disclaims any, and all, liability, including without
+limitation consequential or incidental damages. “Typical” parameters can and do vary in different applications. All operating parameters,
+including “Typical” must be validated for each customer application by the customer’s technical experts. Solomon Systech does not convey
+any license under its patent rights nor the rights of others. Solomon Systech products are not designed, intended, or authorized for use as
+components in systems intended for surgical implant into the body, or other applications intended to support or sustain life, or for any other
+application in which the failure of the Solomon Systech product could create a situation where personal injury or death may occur. Should
+Buyer purchase or use Solomon Systech products for any such unintended or unauthorized application, Buyer shall indemnify and hold
+Solomon Systech and its offices, employees, subsidiaries, affiliates, and distributors harmless against all claims, costs, damages, and
+expenses, and reasonable attorney fees arising out of, directly or indirectly, any claim of personal injury or death associated with such
+unintended or unauthorized use, even if such claim alleges that Solomon Systech was negligent regarding the design or manufac ture of the
+part.
+
+
+
+
+    The product(s) listed in this datasheet comply with Directive 2011/65/EU of the European Parliament and of the council of 8 J une 2011 on
+the restriction of the use of certain hazardous substances in electrical and electronic equipment and People’s Republic of China Electronic
+Industry Standard GB/T 26572-2011 “Requirements for concentration limits for certain hazardous substances in electronic information
+products (电子电器产品中限用物質的限用要求)”. Hazardous Substances test report is available upon request.
+
+
+http://www.solomon-systech.com
+
+
+
+
+SSD1677              Rev 1.0        P 47/47         Nov 2018                                                           Solomon Systech
+

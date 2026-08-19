@@ -1,0 +1,9 @@
+# PlatformIO 빌드 결과와 내려받은 라이브러리
+.pio/
+
+# macOS
+.DS_Store
+
+# 편집기
+.vscode/
+.idea/
